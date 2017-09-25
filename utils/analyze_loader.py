@@ -1,7 +1,7 @@
 import sys
 import os
 
-from nibabel.fileholder import FileHolder
+from nibabel.fileholders import FileHolder
 from nibabel.analyze import AnalyzeImage
 
 
