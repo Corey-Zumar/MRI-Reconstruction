@@ -59,6 +59,7 @@ class FNet:
 		return int(millis_since_epoch)
 
 	def _create_architecture(self):
+		# How many channels does each image have? This should have a third dimension
 		inputs = Input(shape=(256,256))
 
 		weights_initializer = RandomNormal(mean=0.0, stddev=.01, seed=self._get_initializer_seed())
@@ -107,6 +108,10 @@ class FNet:
 			activation='relu', kernel_initializer=weights_initializer)(deconv2d_1)
 		conv2d_10 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_9)
+
+		# Conv2d_10 is 256 x 256 x 64. We now need to reduce the number of output
+		# channels via a convolution with `n` filters, where `n` is the original
+		# number of channels
 
 		outputs = Conv2D(filters=256, kernel_size=(1,1), strides=(1,1), padding='same', 
 			activation=None, kernel_initializer=weights_initializer)(deconv2d_1)
