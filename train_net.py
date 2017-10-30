@@ -144,7 +144,7 @@ def load_and_subsample_images(disk_path):
 	for subdir in oasis_subdirs:
 		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
 		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
-			oasis_raw_paths.append(raw_fname)
+			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
 	return [(load_image(raw_img_path), Subsample.subsample(raw_img_path)) for raw_img_path in oasis_raw_paths]
 
