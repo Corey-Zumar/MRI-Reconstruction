@@ -16,6 +16,7 @@ from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
 from utils import Subsample
+from utils.keras_parallel import multi_gpu_model
 
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
@@ -127,7 +128,7 @@ class FNet:
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
-		self.model = Model(inputs=[inputs], outputs=[outputs])
+		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=4)
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
 
 		self.architecture_exists = True
