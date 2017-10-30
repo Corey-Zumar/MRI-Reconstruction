@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def subsample(analyze_img_path, substep, lowfreqPercent):
+def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
     """
     Subsamples an MRI image in Analyze 7.5 format
     Note: must have .hdr file

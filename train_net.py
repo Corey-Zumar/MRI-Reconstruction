@@ -1,5 +1,6 @@
 import sys
 import os
+import argparse
 
 from datetime import datetime
 
@@ -12,12 +13,21 @@ from keras.optimizers import RMSProp
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
+from utils import Subsample
+
+# Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
 BATCH_SIZE = 32
 NUM_EPOCHS = 2000
 
+# Logging
 CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
+
+# Data paths
+OASIS_DATA_DIRECTORY_PREFIX = "OAS"
+OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
+OASIS_DATA_EXTENSION_IMG = ".img"
 
 class FNet:
 
@@ -121,3 +131,30 @@ class FNet:
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
 
 		self.architecture_exists = True
+
+def load_image(image_path):
+	img = nib.load(image_path)
+	data = img.get_data()
+	return data
+
+def load_and_subsample_images(disk_path):
+	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
+	oasis_raw_paths = []
+	for subdir in oasis_subdirs:
+		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
+		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
+			oasis_raw_paths.append(raw_fname)
+
+	return [(load_image(image_path), Subsample.subsample(raw_img_path)) for raw_img_path in oasis_raw_paths]
+
+def main():
+    parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
+    parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
+    args = parser.parse_args()
+
+    images = load_images(args.disk_path)
+    print(images[0][0].shape)
+
+if __name__ == "__main__":
+	main()
+
