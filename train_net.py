@@ -125,7 +125,7 @@ class FNet:
 		outputs = Conv2D(filters=1, kernel_size=(1,1), strides=(1,1), padding='same', 
 			activation=None, kernel_initializer=weights_initializer)(deconv2d_1)
 
-		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=0, decay=0)
+		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
 		self.model = Model(inputs=[inputs], outputs=[outputs])
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
