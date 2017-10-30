@@ -137,7 +137,7 @@ class FNet:
 def load_image(image_path):
 	img = nib.load(image_path)
 	data = img.get_data()
-	return data.reshape(256,256,1)
+	return data
 
 def load_and_subsample_images(disk_path):
 	"""
