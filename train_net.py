@@ -20,7 +20,7 @@ from utils import Subsample
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 NUM_EPOCHS = 2000
 
 # Logging
@@ -156,29 +156,24 @@ def load_and_subsample_images(disk_path):
 		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
 			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
-	# x_train = None
-	# y_train = None
+	x_train = None
+	y_train = None
 
-	# for i in range(len(oasis_raw_paths)):
-	# 	raw_img_path = oasis_raw_paths[i]
+	for i in range(len(oasis_raw_paths)):
+		raw_img_path = oasis_raw_paths[i]
 
-	# 	subsampled_img = Subsample.subsample(raw_img_path)
-	# 	original_img = load_image(raw_img_path)
+		subsampled_img = Subsample.subsample(raw_img_path)
+		original_img = load_image(raw_img_path)
 
-	# 	subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
-	# 	original_img = original_img.reshape(128, 256, 256, 1)
+		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
+		original_img = original_img.reshape(128, 256, 256, 1)
 
-	# 	if i == 0:
-	# 		x_train = subsampled_img
-	# 		y_train = original_img
-	# 	else:
-	# 		x_train = np.vstack([x_train, subsampled_img])
-	# 		y_train = np.vstack([y_train, original_img])
-
-	# 	break
-
-	x_train = np.random.rand(1, 256, 256, 1)
-	y_train = np.random.rand(1, 256, 256, 1)
+		if i == 0:
+			x_train = subsampled_img
+			y_train = original_img
+		else:
+			x_train = np.vstack([x_train, subsampled_img])
+			y_train = np.vstack([y_train, original_img])
 
 	return x_train, y_train
 
