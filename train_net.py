@@ -168,7 +168,7 @@ def load_and_subsample_images(disk_path):
 		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
 		original_img = original_img.reshape(128, 256, 256, 1)
 
-		if not x_train:
+		if x_train == None:
 			x_train = subsampled_img
 			y_train = original_img
 		else:
