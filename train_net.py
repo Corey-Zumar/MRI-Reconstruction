@@ -166,8 +166,8 @@ def load_and_subsample_images(disk_path):
 		subsampled_img = Subsample.subsample(raw_img_path)
 		original_img = load_image(raw_img_path)
 
-		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
-		original_img = original_img.reshape(128, 256, 256, 1)
+		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)
+		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)
 
 		if i == 0:
 			x_train = subsampled_img
