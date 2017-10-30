@@ -83,8 +83,7 @@ class FNet:
 		conv2d_2 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_1)
 
-		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same', 
-			kernel_initializer=weights_initializer)(conv2d_2)
+		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
 
 		conv2d_3 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(maxpool_1)
@@ -92,8 +91,7 @@ class FNet:
 		conv2d_4 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_3)
 
-		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same', 
-			kernel_initializer=weights_initializer)(conv2d_4)
+		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
 		conv2d_5 = Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(maxpool_2)
