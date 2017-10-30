@@ -21,7 +21,7 @@ from utils.keras_parallel import multi_gpu_model
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 8
+BATCH_SIZE = 64
 NUM_EPOCHS = 2000
 
 # Logging
