@@ -168,19 +168,14 @@ def load_and_subsample_images(disk_path):
 		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
 		original_img = original_img.reshape(128, 256, 256, 1)
 
-		x_train = []
-		y_train = []
+		if i == 0:
+			x_train = subsampled_img
+			y_train = original_img
+		else:
+			x_train = np.vstack([x_train, subsampled_img])
+			y_train = np.vstack([y_train, original_img])
 
-		for i in range(len(subsampled_img)):
-			x_train.append(subsampled_img[i])
-			y_train.append(original_img[i])
-
-		# if i == 0:
-		# 	x_train = subsampled_img
-		# 	y_train = original_img
-		# else:
-		# 	x_train = np.vstack([x_train, subsampled_img])
-		# 	y_train = np.vstack([y_train, original_img])
+		break
 
 	return x_train, y_train
 
