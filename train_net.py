@@ -161,14 +161,16 @@ def load_and_subsample_images(disk_path):
 	x_train = None
 	y_train = None
 
-	for raw_img_path in oasis_raw_paths:
+	for i in range(len(oasis_raw_paths)):
+		raw_img_path = oasis_raw_paths[i]
+
 		subsampled_img = Subsample.subsample(raw_img_path)
 		original_img = load_image(raw_img_path)
 
 		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
 		original_img = original_img.reshape(128, 256, 256, 1)
 
-		if x_train == None:
+		if i == 0:
 			x_train = subsampled_img
 			y_train = original_img
 		else:
