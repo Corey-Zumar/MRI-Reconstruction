@@ -181,9 +181,15 @@ def load_and_subsample_images(disk_path):
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
+    parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
     args = parser.parse_args()
 
     x_train, y_train = load_and_subsample_images(args.disk_path)
+
+    if len(x_train) > args.training_size:
+    	training_idxs = np.random.choice(range(len(x_train)), size=args.training_size)
+    	x_train = x_train[training_idxs]
+    	y_train = y_train[training_idxs]
 
     net = FNet()
     net.train(x_train, y_train)
