@@ -152,7 +152,7 @@ def main():
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
     args = parser.parse_args()
 
-    images = load_images(args.disk_path)
+    images = load_and_subsample_images(args.disk_path)
     print(images[0][0].shape)
 
 if __name__ == "__main__":
