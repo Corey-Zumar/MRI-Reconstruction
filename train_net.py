@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 import nibabel as nib
+import numpy as np
 
 from datetime import datetime
 
@@ -139,6 +140,17 @@ def load_image(image_path):
 	return data.reshape(256,256,1)
 
 def load_and_subsample_images(disk_path):
+	"""
+	Parameters
+	------------
+	disk_path : str
+		A path to an OASIS disc directory
+
+	Returns
+	------------
+	A tuple of training data and ground truth images, each represented
+	as numpy float arrays of dimension N x 256 x 256 x 1.
+	"""
 	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
 	oasis_raw_paths = []
 	for subdir in oasis_subdirs:
@@ -146,15 +158,34 @@ def load_and_subsample_images(disk_path):
 		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
 			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
-	return [(load_image(raw_img_path), Subsample.subsample(raw_img_path)) for raw_img_path in oasis_raw_paths]
+	x_train = None
+	y_train = None
+
+	for raw_img_path in oasis_raw_paths:
+		subsampled_img = Subsample.subsample(raw_img_path)
+		original_img = load_image(raw_img_path)
+
+		subsampled_img = subsampled_img.reshape(128, 256, 256, 1)
+		original_img = original_img.reshape(128, 256, 256, 1)
+
+		if not x_train:
+			x_train = subsampled_img
+			y_train = original_img
+		else:
+			x_train = np.vstack([x_train, subsampled_img])
+			y_train = np.vstack([y_train, original_img])
+
+	return x_train, y_train
 
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
     args = parser.parse_args()
 
-    images = load_and_subsample_images(args.disk_path)
-    print(images[0][0].shape)
+    x_train, y_train = load_and_subsample_images(args.disk_path)
+
+    net = FNet()
+    net.train(x_train, y_train)
 
 if __name__ == "__main__":
 	main()
