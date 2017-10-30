@@ -136,7 +136,7 @@ class FNet:
 def load_image(image_path):
 	img = nib.load(image_path)
 	data = img.get_data()
-	return data
+	return data.reshape(256,256,1)
 
 def load_and_subsample_images(disk_path):
 	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
