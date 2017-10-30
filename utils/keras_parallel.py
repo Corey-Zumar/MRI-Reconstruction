@@ -142,4 +142,15 @@ def multi_gpu_model(model, gpus):
         for outputs in all_outputs:
             merged.append(concatenate(outputs,
                                       axis=0))
-        return Model(model.inputs, merged)
+        new_model = Model(model.inputs, merged)
+
+        # Fix for checkpointing from
+        # https://github.com/kuza55/keras-extras/issues/3
+        funcType = type(model.save)
+
+        # monkeypatch the save to save just the underlying model
+        def new_save(self_,filepath, overwrite=True):
+            model.save(filepath, overwrite)
+            
+        new_model.save=funcType(new_save, new_model)
+        return new_model
