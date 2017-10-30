@@ -1,6 +1,7 @@
 import sys
 import os
 import argparse
+import nibabel as nib
 
 from datetime import datetime
 
