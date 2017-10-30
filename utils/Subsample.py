@@ -69,7 +69,6 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
         # Visualize result of subsample #
         reconsubshift = abs(np.fft.ifft2(subshift))
         imgarr[:,:,slice,0] = reconsubshift
-        print(slice)
-        print(type(imgarr))
+        print("Loaded slice: {} of image with path: {}".format(slice, analyze_img_path))
 
     return np.squeeze(imgarr)
