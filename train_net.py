@@ -7,7 +7,7 @@ import numpy as np
 from datetime import datetime
 
 from keras.models import Model
-from keras.layers import Input, Dense, Activation
+from keras.layers import Input, Dense, Activation, concatenate
 from keras.layers.convolutional import Conv2D
 from keras.layers.pooling import MaxPooling2D
 from keras.losses import mean_squared_error
