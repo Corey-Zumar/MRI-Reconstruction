@@ -145,7 +145,7 @@ def load_and_subsample_images(disk_path):
 		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
 			oasis_raw_paths.append(raw_fname)
 
-	return [(load_image(image_path), Subsample.subsample(raw_img_path)) for raw_img_path in oasis_raw_paths]
+	return [(load_image(raw_img_path), Subsample.subsample(raw_img_path)) for raw_img_path in oasis_raw_paths]
 
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
