@@ -1,23 +1,36 @@
 import sys
 import os
+import argparse
+import nibabel as nib
+import numpy as np
 
 from datetime import datetime
 
 from keras.models import Model
-from keras.layers import Input, Dense, Activation
-from keras.layers.convolutional import Conv2D
+from keras.layers import Input, Dense, Activation, concatenate
+from keras.layers.convolutional import Conv2D, Conv2DTranspose
 from keras.layers.pooling import MaxPooling2D
 from keras.losses import mean_squared_error
-from keras.optimizers import RMSProp
+from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
+from utils import Subsample
+from utils.keras_parallel import multi_gpu_model
+
+# Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 NUM_EPOCHS = 2000
 
+# Logging
 CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
+
+# Data paths
+OASIS_DATA_DIRECTORY_PREFIX = "OAS"
+OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
+OASIS_DATA_EXTENSION_IMG = ".img"
 
 class FNet:
 
@@ -71,8 +84,7 @@ class FNet:
 		conv2d_2 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_1)
 
-		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same', 
-			kernel_initializer=weights_initializer)(conv2d_2)
+		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
 
 		conv2d_3 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(maxpool_1)
@@ -80,8 +92,7 @@ class FNet:
 		conv2d_4 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_3)
 
-		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same', 
-			kernel_initializer=weights_initializer)(conv2d_4)
+		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
 		conv2d_5 = Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(maxpool_2)
@@ -115,9 +126,74 @@ class FNet:
 		outputs = Conv2D(filters=1, kernel_size=(1,1), strides=(1,1), padding='same', 
 			activation=None, kernel_initializer=weights_initializer)(deconv2d_1)
 
-		optimizer = RMSProp(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=0, decay=0)
+		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
-		self.model = Model(inputs=[inputs], outputs=[outputs])
+		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=4)
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
 
 		self.architecture_exists = True
+
+def load_image(image_path):
+	img = nib.load(image_path)
+	data = img.get_data()
+	return np.squeeze(data)
+
+def load_and_subsample_images(disk_path):
+	"""
+	Parameters
+	------------
+	disk_path : str
+		A path to an OASIS disc directory
+
+	Returns
+	------------
+	A tuple of training data and ground truth images, each represented
+	as numpy float arrays of dimension N x 256 x 256 x 1.
+	"""
+	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
+	oasis_raw_paths = []
+	for subdir in oasis_subdirs:
+		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
+		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
+			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
+
+	x_train = None
+	y_train = None
+
+	for i in range(len(oasis_raw_paths)):
+		raw_img_path = oasis_raw_paths[i]
+
+		subsampled_img = Subsample.subsample(raw_img_path)
+		original_img = load_image(raw_img_path)
+
+		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)
+		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)
+
+		if i == 0:
+			x_train = subsampled_img
+			y_train = original_img
+		else:
+			x_train = np.vstack([x_train, subsampled_img])
+			y_train = np.vstack([y_train, original_img])
+
+	return x_train, y_train
+
+def main():
+    parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
+    parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
+    parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
+    args = parser.parse_args()
+
+    x_train, y_train = load_and_subsample_images(args.disk_path)
+
+    if len(x_train) > args.training_size:
+    	training_idxs = np.random.choice(range(len(x_train)), size=args.training_size)
+    	x_train = x_train[training_idxs]
+    	y_train = y_train[training_idxs]
+
+    net = FNet()
+    net.train(x_train, y_train)
+
+if __name__ == "__main__":
+	main()
+

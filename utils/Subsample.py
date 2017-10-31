@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def subsample(analyze_img_path, substep, lowfreqPercent):
+def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
     """
     Subsamples an MRI image in Analyze 7.5 format
     Note: must have .hdr file
@@ -69,7 +69,6 @@ def subsample(analyze_img_path, substep, lowfreqPercent):
         # Visualize result of subsample #
         reconsubshift = abs(np.fft.ifft2(subshift))
         imgarr[:,:,slice,0] = reconsubshift
-        print(slice)
-        print(type(imgarr))
+        print("Loaded slice: {} of image with path: {}".format(slice, analyze_img_path))
 
     return np.squeeze(imgarr)
