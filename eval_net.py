@@ -34,9 +34,9 @@ def main():
     result = fnet.predict(test_subsampled[70].reshape(1, 256, 256, 1))
 
     magnitude_spectrum = 20*np.log(np.abs(result.reshape(256,256)))
-    plt.subplot(121),plt.imshow(test_original[70].reshape(256,256), cmap = 'gray')
+    plt.subplot(121),plt.imshow(test_subsampled[70].reshape(256,256), cmap = 'gray')
     plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-    plt.subplot(122),plt.imshow(magnitude_spectrum, cmap = 'gray')
+    plt.subplot(122),plt.imshow(result.reshape(256,256), cmap = 'gray')
     plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
     plt.show()
 

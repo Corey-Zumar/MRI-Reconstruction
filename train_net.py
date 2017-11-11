@@ -9,7 +9,7 @@ from datetime import datetime
 from keras.models import Model
 from keras.layers import Input, Dense, Activation, concatenate
 from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D
+from keras.layers.pooling import MaxPooling2D, AveragePooling2D
 from keras.losses import mean_squared_error
 from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
@@ -17,6 +17,8 @@ from keras.callbacks import ModelCheckpoint
 
 from utils import Subsample
 from utils.keras_parallel import multi_gpu_model
+
+from layers import Unpool2D
 
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
@@ -84,6 +86,9 @@ class FNet:
 		conv2d_2 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_1)
 
+		# This layer will later be used for unpooling purposes
+		avgpool_1 = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
+
 		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
 
 		conv2d_3 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
@@ -91,6 +96,9 @@ class FNet:
 
 		conv2d_4 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_3)
+
+		# This layer will later be used for unpooling purposes
+		avgpool_2 = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
 		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
@@ -100,22 +108,26 @@ class FNet:
 		conv2d_6 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_5)
 
-		deconv2d_1 = concatenate(
-			[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-				kernel_initializer=weights_initializer)(conv2d_6), conv2d_4], axis=3)
+		unpool_1 = concatenate([Unpool2D(pool2d_layer=avgpool_1, size=(2,2))(conv2d_6), conv2d_4], axis=3)
+
+		# deconv2d_1 = concatenate(
+		# 	[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
+		# 		kernel_initializer=weights_initializer)(conv2d_6), conv2d_4], axis=3)
 
 		conv2d_7 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
-			activation='relu', kernel_initializer=weights_initializer)(deconv2d_1)
+			activation='relu', kernel_initializer=weights_initializer)(unpool_1)
 
 		conv2d_8 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_7)
 
-		deconv2d_1 = concatenate(
-			[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-				kernel_initializer=weights_initializer)(conv2d_8), conv2d_2], axis=3)
+		unpool_2 = concatenate([Unpool2D(pool2d_layer=avgpool_2, size=(2,2))(conv2d_8), conv2d_2], axis=3)
+
+		# deconv2d_2 = concatenate(
+		# 	[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
+		# 		kernel_initializer=weights_initializer)(conv2d_8), conv2d_2], axis=3)
 
 		conv2d_9 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
-			activation='relu', kernel_initializer=weights_initializer)(deconv2d_1)
+			activation='relu', kernel_initializer=weights_initializer)(unpool_2)
 		conv2d_10 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_9)
 
