@@ -1,4 +1,4 @@
-from keras.layers import Upsampling2D
+from keras.layers import UpSampling2D
 from keras import background as K
 
 """
