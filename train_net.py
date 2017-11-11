@@ -135,7 +135,7 @@ class FNet:
 		# number of channels. We therefore choose `n` = 1.
 
 		outputs = Conv2D(filters=1, kernel_size=(1,1), strides=(1,1), padding='same', 
-			activation=None, kernel_initializer=weights_initializer)(deconv2d_1)
+			activation=None, kernel_initializer=weights_initializer)(conv2d_10)
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
