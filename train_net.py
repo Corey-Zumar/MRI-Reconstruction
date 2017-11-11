@@ -22,7 +22,7 @@ from utils.layers import Unpool2D
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 64
+BATCH_SIZE = 320
 NUM_EPOCHS = 2000
 
 # Logging
@@ -141,7 +141,7 @@ class FNet:
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
-		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=4)
+		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=8)
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
 
 		self.architecture_exists = True
