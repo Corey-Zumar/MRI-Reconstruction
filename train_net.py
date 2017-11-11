@@ -91,10 +91,6 @@ class FNet:
 		conv2d_2 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_1)
 
-		# This layer will later be used for unpooling purposes
-		avgpool_1_layer = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')
-		avgpool_1 = avgpool_1_layer(conv2d_2)
-
 		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
 
 		conv2d_3 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
@@ -102,10 +98,6 @@ class FNet:
 
 		conv2d_4 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_3)
-
-		# This layer will later be used for unpooling purposes
-		avgpool_2_layer = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')
-		avgpool_2 = avgpool_2_layer(conv2d_4)
 
 		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
