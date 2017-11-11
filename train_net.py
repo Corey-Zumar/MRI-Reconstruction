@@ -53,6 +53,7 @@ class FNet:
 
 		if not self.architecture_exists:
 			self._create_architecture()
+			self._save_json()
 
 		checkpoint_callback = ModelCheckpoint(CHECKPOINT_FILE_PATH_FORMAT, monitor='val_loss', period=1)
 
@@ -71,6 +72,11 @@ class FNet:
 		curr_time = datetime.now()
 		millis_since_epoch = (curr_time - epoch).total_seconds() * 1000
 		return int(millis_since_epoch)
+
+	def _save_json(self):
+		model_json = self.model.to_json()
+		with open("brain_model.json", "w") as json_file:
+		    json_file.write(model_json)
 
 	def _create_architecture(self):
 		inputs = Input(shape=(256,256,1))
