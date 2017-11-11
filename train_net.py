@@ -17,8 +17,7 @@ from keras.callbacks import ModelCheckpoint
 
 from utils import Subsample
 from utils.keras_parallel import multi_gpu_model
-
-from layers import Unpool2D
+from utils.layers import Unpool2D
 
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
