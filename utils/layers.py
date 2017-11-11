@@ -31,7 +31,11 @@ class Unpool2D(UpSampling2D):
        	UpSampling2D.__init__(self, *args, **kwargs)
 
     def get_config(self):
-        return super(Unpool2D, self).get_config()
+    	config = {
+    		"pool2d_layer" : self._pool2d_layer
+    	}
+    	base_config = super(Unpool2D, self).get_config()
+    	return dict(list(base_config.items()) + list(config.items()))
 
     def get_output(self, train=False):
         X = self.get_input(train)
