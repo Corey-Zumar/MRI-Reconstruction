@@ -26,13 +26,15 @@ class Unpool2D(UpSampling2D):
     '''
     input_ndim = 4
 
-    def __init__(self, pool2d_layer, *args, **kwargs):
-        self._pool2d_layer = pool2d_layer
+    def __init__(self, pool_input, pool_output, *args, **kwargs):
+    	self.pool_input = pool_input
+    	self.pool_output = pool_output
        	UpSampling2D.__init__(self, *args, **kwargs)
 
     def get_config(self):
     	config = {
-    		"pool2d_layer" : self._pool2d_layer
+    		"pool_input" : self.pool_input,
+    		"pool_output" : self.pool_output
     	}
     	base_config = super(Unpool2D, self).get_config()
     	return dict(list(base_config.items()) + list(config.items()))
@@ -48,6 +50,6 @@ class Unpool2D(UpSampling2D):
         else:
             raise Exception('Invalid dim_ordering: ' + self.dim_ordering)
 
-        f = T.grad(T.sum(self._pool2d_layer.output), wrt=self._pool2d_layer.input) * output
+        f = T.grad(T.sum(self.pool_output), wrt=self.pool_input) * output
 
         return f
