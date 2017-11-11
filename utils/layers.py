@@ -30,6 +30,9 @@ class Unpool2D(UpSampling2D):
         self._pool2d_layer = pool2d_layer
        	UpSampling2D.__init__(self, *args, **kwargs)
 
+    def get_config(self):
+        return super(Unpool2D, self).get_config()
+
     def get_output(self, train=False):
         X = self.get_input(train)
         if self.dim_ordering == 'th':
