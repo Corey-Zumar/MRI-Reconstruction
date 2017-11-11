@@ -1,5 +1,5 @@
 from keras.layers import UpSampling2D
-from keras import background as K
+from keras import backend as K
 
 """
 This unpooling layer has been taken and renamed
