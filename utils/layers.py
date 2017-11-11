@@ -28,7 +28,7 @@ class Unpool2D(UpSampling2D):
 
     def __init__(self, pool2d_layer, *args, **kwargs):
         self._pool2d_layer = pool2d_layer
-        super(self).__init__(*args, **kwargs)
+       	UpSampling2D.__init__(self, *args, **kwargs)
 
     def get_output(self, train=False):
         X = self.get_input(train)
