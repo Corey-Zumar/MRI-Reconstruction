@@ -86,7 +86,8 @@ class FNet:
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_1)
 
 		# This layer will later be used for unpooling purposes
-		avgpool_1 = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
+		avgpool_1_layer = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')
+		avgpool_1 = avgpool_1_layer(conv2d_2)
 
 		maxpool_1 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_2)
 
@@ -97,7 +98,8 @@ class FNet:
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_3)
 
 		# This layer will later be used for unpooling purposes
-		avgpool_2 = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
+		avgpool_2_layer = AveragePooling2D(pool_size=(2,2), strides=(2,2), padding='same')
+		avgpool_2 = avgpool_2_layer(conv2d_4)
 
 		maxpool_2 = MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same')(conv2d_4)
 
@@ -107,7 +109,7 @@ class FNet:
 		conv2d_6 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_5)
 
-		unpool_1 = concatenate([Unpool2D(pool_input=avgpool_1.input, pool_output=avgpool_1.output, size=(2,2))(conv2d_6), conv2d_4], axis=3)
+		unpool_1 = concatenate([Unpool2D(pool_input=avgpool_1_layer.input, pool_output=avgpool_1_layer.output, size=(2,2))(conv2d_6), conv2d_4], axis=3)
 
 		# deconv2d_1 = concatenate(
 		# 	[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
@@ -119,7 +121,7 @@ class FNet:
 		conv2d_8 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_7)
 
-		unpool_2 = concatenate([Unpool2D(pool_input=avgpool_2.input, pool_output=avgpool_2.output, size=(2,2))(conv2d_8), conv2d_2], axis=3)
+		unpool_2 = concatenate([Unpool2D(pool_input=avgpool_2_layer.input, pool_output=avgpool_2_layer.input, size=(2,2))(conv2d_8), conv2d_2], axis=3)
 
 		# deconv2d_2 = concatenate(
 		# 	[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
