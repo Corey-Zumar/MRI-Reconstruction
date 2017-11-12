@@ -6,7 +6,6 @@ import keras
 import numpy as np
 
 from utils import Subsample
-from utils.layers import Unpool2D
 
 from matplotlib import pyplot as plt
 
@@ -21,7 +20,7 @@ def load_image(image_path):
     return subsampled_data, original_data
 
 def load_net(net_path):
-    return keras.models.load_model(net_path, custom_objects={"Unpool2D" : Unpool2D})
+    return keras.models.load_model(net_path)
 
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
