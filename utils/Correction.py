@@ -40,15 +40,6 @@ def Correction(subsampled_img, network_output, substep, lowfreqPercent):
     tshift_output = np.fft.fftshift(t_output)
     tshift_input = np.fft.fftshift(t_input)
 
-    mo = 20*np.log(np.abs(tshift_output.reshape(256,256)))
-    mi = 20*np.log(np.abs(tshift_input.reshape(256,256)))
-    plt.subplot(121),plt.imshow(mo, cmap = 'gray', vmin=0, vmax=255)
-    plt.title('Ground_Truth'), plt.xticks([]), plt.yticks([])
-    plt.subplot(122),plt.imshow(mi, cmap = 'gray',vmin=0, vmax=255)
-    plt.title('After_Correction'), plt.xticks([]), plt.yticks([])
-    plt.show()
-
-
         #Subsampler,
         #accounts for the double-counted lines
     lowfreqModifiedPercent = 1.0/float(substep)*lowfreqPercent+lowfreqPercent
