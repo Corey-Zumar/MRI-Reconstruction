@@ -10,14 +10,14 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def Correction(subsampled_img, network_output, substep, lowfreqPercent):
+def Correction(subsampled_img_K, network_output, substep, lowfreqPercent):
     """
     Corrects network output using the input subsampled image.
 
     Parameters
     ------------
-    subsampled_img : numpy.core.memmap.memmap
-        Subsampled image used as network input
+    subsampled_img_K : numpy.core.memmap.memmap
+        K-space subsampled image used to generate network input
     network_output: numpy.core.memmap.memmap
         Output from the CNN
     substep: int
@@ -34,11 +34,10 @@ def Correction(subsampled_img, network_output, substep, lowfreqPercent):
 
         # 2-dimensional fast Fourier transform
     t_output = np.fft.fft2(network_output)#_slice)
-    t_input = np.fft.fft2(subsampled_img)#_slice)
 
         # shifts 0 frequency to center
     tshift_output = np.fft.fftshift(t_output)
-    tshift_input = np.fft.fftshift(t_input)
+    tshift_input = subsampled_img_K
 
         #Subsampler,
         #accounts for the double-counted lines
@@ -46,7 +45,9 @@ def Correction(subsampled_img, network_output, substep, lowfreqPercent):
 
     start = len(tshift_output)/2-int(lowfreqModifiedPercent*float(len(tshift_output)))
     end = len(tshift_output)/2+int(lowfreqModifiedPercent*float(len(tshift_output)))
-
+    print("starting")
+    print(tshift_input[0,20])
+    print(tshift_output[0,20])
     for i in range(0, start):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
@@ -55,7 +56,7 @@ def Correction(subsampled_img, network_output, substep, lowfreqPercent):
     for i in range (end, len(tshift_output)):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
-
+    print(tshift_output[0,20])
         # Visualize result of subsample #
     corr = abs(np.fft.ifft2(np.fft.ifftshift(tshift_output)))
     return corr
