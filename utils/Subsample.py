@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
+def subsample(analyze_img_path, substep, lowfreqPercent):
     """
     Subsamples an MRI image in Analyze 7.5 format
     Note: must have .hdr file
@@ -28,25 +28,27 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
     ------------
     imgarr: numpy.core.memmap.memmap
     An numpy image object representing a list of subsampled human-
-    interpretable images.
+    interpretable images. Values are scaled to range from 0-255
 
     subsampled_img_K: numpy.core.memmap.memmap
-    An numpy image object representing a list of subsampled K-space images.
+    An numpy image object representing a list of subsampled images in k-space.
+    These are complex numbers
     """
     #Load image
     img = nib.load(analyze_img_path)
     hdr = img.get_header()
     data = img.get_data()
 
-    imgarr = np.ones_like(data, dtype='complex')
+    imgarr = np.ones_like(data)
     subsampled_img_K = np.ones_like(data, dtype='complex')
 
     np.set_printoptions(threshold='nan')
 
     #iterate over each slice
-    print(range(data.shape[2]))
+
     for slice in range(data.shape[2]):
         data_slice = np.squeeze(data[:,:,slice])
+
 
         # 2-dimensional fast Fourier transform
         t = np.fft.fft2(data_slice)
@@ -73,9 +75,15 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=.04):
             if i % substep == 0:
                 subshift[i] = tshift[i]
 
-        print("Loaded slice: {} of image with path: {}".format(slice, analyze_img_path))
-        reconsubshift = np.fft.ifft2(np.fft.ifftshift(subshift))
+        # Visualize result of subsample #
+        #print(slice)
+        #print(type(imgarr))
+        reconsubshift = np.fft.ifft2(np.fft.ifftshift(subshift)).real.astype(float)
+        reconsubshift -= reconsubshift.min()
+        reconsubshift /= reconsubshift.max()
+        reconsubshift *= 255.0
         imgarr[:,:,slice,0] = reconsubshift
+
         subsampled_img_K[:,:,slice,0] = subshift
 
     return imgarr, subsampled_img_K
