@@ -165,14 +165,19 @@ def load_and_subsample_images(disk_path):
 	x_train = None
 	y_train = None
 
+	# The indexes of the most relevant slices for a given image/
+	# These slices contain the most structurally interesting
+	# imagery
+	relevant_idxs = range(47,82)
+
 	for i in range(len(oasis_raw_paths)):
 		raw_img_path = oasis_raw_paths[i]
 
 		subsampled_img = Subsample.subsample(raw_img_path)
 		original_img = load_image(raw_img_path)
 
-		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)
-		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)
+		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
+		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
 
 		if i == 0:
 			x_train = subsampled_img
@@ -192,7 +197,11 @@ def main():
     x_train, y_train = load_and_subsample_images(args.disk_path)
 
     if len(x_train) > args.training_size:
-    	training_idxs = np.random.choice(range(len(x_train)), size=args.training_size)
+    	# Select the most relevant slices from each patient
+    	# until the aggregate number of slices is equivalent to the
+    	# specified training size
+    	training_idxs = range(args.training_size)
+    	#training_idxs = np.random.choice(range(len(x_train)), size=args.training_size)
     	x_train = x_train[training_idxs]
     	y_train = y_train[training_idxs]
 
