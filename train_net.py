@@ -7,9 +7,9 @@ import numpy as np
 from datetime import datetime
 
 from keras.models import Model
-from keras.layers import Input, Dense, Activation, concatenate
+from keras.layers import Input, Dense, Activation, concatenate, UpSampling2D
 from keras.layers.convolutional import Conv2D, Conv2DTranspose
-from keras.layers.pooling import MaxPooling2D
+from keras.layers.pooling import MaxPooling2D, AveragePooling2D
 from keras.losses import mean_squared_error
 from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
@@ -17,11 +17,12 @@ from keras.callbacks import ModelCheckpoint
 
 from utils import Subsample
 from utils.keras_parallel import multi_gpu_model
+from utils.layers import Unpool2D
 
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 64
+BATCH_SIZE = 320
 NUM_EPOCHS = 2000
 
 # Logging
@@ -100,22 +101,26 @@ class FNet:
 		conv2d_6 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_5)
 
-		deconv2d_1 = concatenate(
-			[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-				kernel_initializer=weights_initializer)(conv2d_6), conv2d_4], axis=3)
+		unpool_1 = concatenate([UpSampling2D(size=(2,2))(conv2d_6), conv2d_4], axis=3)
+
+		# deconv2d_1 = concatenate(
+		# 	[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
+		# 		kernel_initializer=weights_initializer)(conv2d_6), conv2d_4], axis=3)
 
 		conv2d_7 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
-			activation='relu', kernel_initializer=weights_initializer)(deconv2d_1)
+			activation='relu', kernel_initializer=weights_initializer)(unpool_1)
 
 		conv2d_8 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_7)
 
-		deconv2d_1 = concatenate(
-			[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-				kernel_initializer=weights_initializer)(conv2d_8), conv2d_2], axis=3)
+		unpool_2 = concatenate([UpSampling2D(size=(2,2))(conv2d_8), conv2d_2], axis=3)
+
+		# deconv2d_2 = concatenate(
+		# 	[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
+		# 		kernel_initializer=weights_initializer)(conv2d_8), conv2d_2], axis=3)
 
 		conv2d_9 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
-			activation='relu', kernel_initializer=weights_initializer)(deconv2d_1)
+			activation='relu', kernel_initializer=weights_initializer)(unpool_2)
 		conv2d_10 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_9)
 
@@ -124,11 +129,11 @@ class FNet:
 		# number of channels. We therefore choose `n` = 1.
 
 		outputs = Conv2D(filters=1, kernel_size=(1,1), strides=(1,1), padding='same', 
-			activation=None, kernel_initializer=weights_initializer)(deconv2d_1)
+			activation=None, kernel_initializer=weights_initializer)(conv2d_10)
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
-		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=4)
+		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=8)
 		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
 
 		self.architecture_exists = True
