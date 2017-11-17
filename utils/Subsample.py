@@ -78,7 +78,7 @@ def subsample(analyze_img_path, substep, lowfreqPercent):
         # Visualize result of subsample #
         #print(slice)
         #print(type(imgarr))
-        reconsubshift = np.fft.ifft2(np.fft.ifftshift(subshift)).real.astype(float)
+        reconsubshift = abs(np.fft.ifft2(np.fft.ifftshift(subshift)).real).astype(float)
         reconsubshift -= reconsubshift.min()
         reconsubshift /= reconsubshift.max()
         reconsubshift *= 255.0
