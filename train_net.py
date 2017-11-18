@@ -19,6 +19,8 @@ from utils import Subsample
 from utils.keras_parallel import multi_gpu_model
 from utils.layers import Unpool2D
 
+from matplotlib import pyplot as plt
+
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
@@ -140,8 +142,11 @@ class FNet:
 
 def load_image(image_path):
 	img = nib.load(image_path)
-	data = img.get_data()
-	return np.squeeze(data)
+	data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+	data -= data.min()
+	data = data / data.max()
+	data = data * 255.0
+	return data
 
 def load_and_subsample_images(disk_path):
 	"""
@@ -176,7 +181,7 @@ def load_and_subsample_images(disk_path):
 		subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
 		original_img = load_image(raw_img_path)
 
-		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
+		subsampled_img = np.array(np.moveaxis(subsampled_img, -2, 0)[relevant_idxs], dtype=np.float32)
 		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
 
 		if i == 0:
