@@ -168,7 +168,7 @@ def load_and_subsample_images(disk_path):
 	for i in range(len(oasis_raw_paths)):
 		raw_img_path = oasis_raw_paths[i]
 
-		subsampled_img = Subsample.subsample(raw_img_path)
+		subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
 		original_img = load_image(raw_img_path)
 
 		subsampled_img = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)
