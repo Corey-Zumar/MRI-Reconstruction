@@ -22,7 +22,7 @@ from utils.layers import Unpool2D
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 320
+BATCH_SIZE = 256
 NUM_EPOCHS = 2000
 
 # Logging
