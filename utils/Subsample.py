@@ -86,4 +86,6 @@ def subsample(analyze_img_path, substep, lowfreqPercent):
 
         subsampled_img_K[:,:,slice,0] = subshift
 
+        print("Loaded slice: {} of image with path: {}".format(slice, analyze_img_path))
+
     return imgarr, subsampled_img_K
