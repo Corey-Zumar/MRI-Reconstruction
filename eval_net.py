@@ -14,7 +14,7 @@ def load_image(image_path):
     original_data = np.squeeze(original_img.get_data())
     original_data = np.moveaxis(original_data, -1, 0).reshape(128, 256, 256, 1)
 
-    subsampled_img = Subsample.subsample(image_path)
+    subsampled_img, _ = Subsample.subsample(image_path, substep=4, lowfreqPercent=.04)
     subsampled_data = np.moveaxis(subsampled_img, -1, 0).reshape(128, 256, 256, 1)
 
     return subsampled_data, original_data
