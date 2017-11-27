@@ -102,8 +102,10 @@ def eval_loss(net_path, data_path, substep, size):
             if len(losses) >= size:
                 break
 
-        if len(losses) >= size:
-            break
+        else:
+            continue
+
+        break
 
     mse = np.mean(losses)
     std = np.std(losses)
@@ -131,7 +133,7 @@ def main():
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
-        eval_loss(args.net_path, args.data_path, args.substep, args.test_size)
+        eval_loss(args.net_path, args.data_path, args.substep, int(args.test_size))
     else:
         raise Exception("Either '--img_path' or '--data_path' must be specified!")
 
