@@ -39,9 +39,9 @@ def load_image(image_path, substep):
 def load_net(net_path):
     return keras.models.load_model(net_path)
 
-def eval_diff_plot(img_path, substep):
+def eval_diff_plot(net_path, img_path, substep):
     test_subsampled, test_original = load_image(img_path, substep)
-    fnet = load_net(args.net_path)
+    fnet = load_net(net_path)
 
     result = fnet.predict(test_subsampled[70].reshape(1, 256, 256, 1))
 
@@ -55,8 +55,8 @@ def eval_diff_plot(img_path, substep):
 def compute_loss(output, original):
     return np.linalg.norm(output.flatten() - original.flatten())
 
-def eval_loss(data_path, substep):
-    fnet = load_net(args.net_path)
+def eval_loss(net_path, data_path, substep):
+    fnet = load_net(net_path)
     img_paths = get_image_paths(data_path)
     losses = []
     for img_path in img_paths:
@@ -80,13 +80,15 @@ def main():
 
     if not args.substep:
         raise Exception("--substep must be specified!")
+    elif not args.net_path:
+        raise Exception("--net_path must be specified!")
 
     if args.img_path:
-        eval_diff_plot(args.img_path, args.substep)
+        eval_diff_plot(args.net_path, args.img_path, args.substep)
     elif args.data_path:
-        print("MSE: {}".format(eval_loss(args.data_path, args.substep)))
+        print("MSE: {}".format(eval_loss(args.net_path, args.data_path, args.substep)))
     else:
-        raise Exception("Either '--img_path' or '--dat_path' must be specified!")
+        raise Exception("Either '--img_path' or '--data_path' must be specified!")
 
 
 if __name__ == "__main__":
