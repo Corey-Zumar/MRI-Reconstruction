@@ -88,11 +88,15 @@ def eval_loss(net_path, data_path, substep):
         for slice_idx in range(128):
             fnet_input = test_subsampled[slice_idx].reshape(1, 256, 256, 1)
             fnet_output = fnet.predict(fnet_input)
-            corrected_output = Correction.Correction(np.squeeze(test_subsampled_k), 
+            fnet_output = normalize_data(fnet_output).astype(int)
+            fnet_output = fnet_output.reshape(256,256)
+            corrected_output = Correction.Correction(test_subsampled_k[slice_idx], 
                                                      fnet_output, 
                                                      substep=substep, 
                                                      lowfreqPercent=LOW_FREQ_PERCENT)
-            loss = compute_loss(output=corrected_output, original=test_original[slice_idx])
+
+            ground_truth = normalize_data(test_original[slice_idx])
+            loss = compute_loss(output=corrected_output, original=ground_truth)
             losses.append(loss)
 
     return float(sum(losses)) / len(losses)
