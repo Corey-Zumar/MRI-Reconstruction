@@ -20,7 +20,7 @@ def get_image_paths(data_path):
     oasis_subdirs = [subdir for subdir in os.listdir(data_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
     oasis_raw_paths = []
     for subdir in oasis_subdirs:
-        raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
+        raws_subdir = os.path.join(data_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
         for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
             oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
