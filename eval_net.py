@@ -30,7 +30,7 @@ def normalize_data(data):
     data = np.copy(data)
     data -= data.min()
     data = data / data.max()
-    data = data * 255.0
+    data = data
     return data
 
 def load_image(image_path, substep):
