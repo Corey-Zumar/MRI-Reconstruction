@@ -85,7 +85,7 @@ def eval_loss(net_path, data_path, substep, size):
     losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
-        for slice_idx in range(128):
+        for slice_idx in range(47, 82):
             fnet_input = test_subsampled[slice_idx].reshape(1, 256, 256, 1)
             fnet_output = fnet.predict(fnet_input)
             fnet_output = normalize_data(fnet_output)
