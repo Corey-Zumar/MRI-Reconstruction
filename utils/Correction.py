@@ -45,9 +45,9 @@ def Correction(subsampled_img_K, network_output, substep, lowfreqPercent):
 
     start = len(tshift_output)/2-int(lowfreqModifiedPercent*float(len(tshift_output)))
     end = len(tshift_output)/2+int(lowfreqModifiedPercent*float(len(tshift_output)))
-    print("starting")
-    print(tshift_input[0,20])
-    print(tshift_output[0,20])
+    #print("starting")
+    #print(tshift_input[0,20])
+    #print(tshift_output[0,20])
     for i in range(0, start):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
@@ -56,7 +56,7 @@ def Correction(subsampled_img_K, network_output, substep, lowfreqPercent):
     for i in range (end, len(tshift_output)):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
-    print(tshift_output[0,20])
+    #print(tshift_output[0,20])
         # Visualize result of subsample #
     corr = abs(np.fft.ifft2(np.fft.ifftshift(tshift_output)))
     return corr
