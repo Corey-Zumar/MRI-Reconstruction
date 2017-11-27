@@ -63,7 +63,7 @@ def Correction(subsampled_img_K, network_output, substep=4, lowfreqPercent=0.04)
     corr -= corr.min()
     corr = corr / corr.max()
     corr = corr * 255.0
-    #corr += 0.5
-    #corr = corr.astype(int)
+    corr += 0.5
+    corr = corr.astype(int)
     return corr
     #return 20*np.log(abs(tshift_output))

@@ -103,7 +103,7 @@ def eval_loss(net_path, data_path, substep, size):
             ground_truth = normalize_data(test_original[slice_idx])
             loss = compute_loss(output=corrected_output, original=ground_truth)
             losses.append(loss)
-            aliased_loss = compute_loss(output=test_subsampled, original=ground_truth)
+            aliased_loss = compute_loss(output=test_subsampled[slice_idx], original=ground_truth)
             aliased_losses.append(aliased_loss)
             print("Evaluated {} images".format(len(losses)))
             if len(losses) >= size:
@@ -118,8 +118,12 @@ def eval_loss(net_path, data_path, substep, size):
     std = np.std(losses)
 
     aliased_mse = np.mean(aliased_losses)
+    aliased_std = np.std(aliased_losses)
 
-    print("Aliased MSE: {}, MSE: {}, STD: {}".format(aliased_mse, mse, std))
+    print("Aliased MSE: {}, Aliased STD: {}, MSE: {}, STD: {}".format(aliased_mse, 
+                                                                      aliased_std, 
+                                                                      mse, 
+                                                                      std))
 
     return losses
 
