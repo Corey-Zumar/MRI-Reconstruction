@@ -104,10 +104,8 @@ def eval_loss(net_path, data_path, substep, size):
             if len(losses) >= size:
                 break
 
-        else:
-            continue
-
-        break
+        if len(losses) >= size:
+            break
 
     mse = np.mean(losses)
     std = np.std(losses)
