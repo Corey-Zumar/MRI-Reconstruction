@@ -26,9 +26,8 @@ def get_image_paths(data_path):
 
     return oasis_raw_paths
 
-def load_image(image_path):
-    img = nib.load(image_path)
-    data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+def normalize_data(data):
+    data = np.copy(data)
     data -= data.min()
     data = data / data.max()
     data = data * 255.0
@@ -38,30 +37,43 @@ def load_image(image_path, substep):
     original_img = nib.load(image_path)
 
     original_data = np.array(np.squeeze(original_img.get_data()), dtype=np.float32)
-    original_data -= original_data.min()
-    original_data = original_data / original_data.max()
-    original_data = original_data * 255.0
-    original_data = np.moveaxis(original_data, -1, 0).reshape(128, 256, 256, 1)
+    original_data = np.moveaxis(original_data, -1, 0)
+    original_data -= normalize_data(original_data)
 
-    subsampled_img, _ = Subsample.subsample(image_path, substep=substep, lowfreqPercent=LOW_FREQ_PERCENT)
-    subsampled_data = np.moveaxis(subsampled_img, -2, 0)
+    subsampled_img, subsampled_K = Subsample.subsample(image_path, substep=substep, lowfreqPercent=LOW_FREQ_PERCENT)
 
-    return subsampled_data, original_data
+    subsampled_data = np.moveaxis(subsampled_img, -1, 0)
+    subsampled_K = np.moveaxis(subsampled_K, -1, 0)
+
+    return subsampled_data, subsampled_K, original_data
 
 def load_net(net_path):
     return keras.models.load_model(net_path)
 
 def eval_diff_plot(net_path, img_path, substep):
-    test_subsampled, test_original = load_image(img_path, substep)
+    test_subsampled, test_subsampled_K, test_original = load_image(img_path, substep)
     fnet = load_net(net_path)
 
-    result = fnet.predict(test_subsampled[70].reshape(1, 256, 256, 1))
+    original_img = test_original[70].reshape(256, 256)
 
-    magnitude_spectrum = 20*np.log(np.abs(result.reshape(256,256)))
-    plt.subplot(121),plt.imshow(test_original[70].reshape(256,256), cmap = 'gray')
-    plt.title('Input Image'), plt.xticks([]), plt.yticks([])
-    plt.subplot(122),plt.imshow(result.reshape(256,256), cmap = 'gray')
-    plt.title('Magnitude Spectrum'), plt.xticks([]), plt.yticks([])
+    fnet_input = test_subsampled[70].reshape((1, 256, 256, 1))
+    fnet_output = fnet.predict(fnet_input)
+    fnet_output = normalize_data(fnet_output).astype(int)
+    fnet_output = fnet_output.reshape(256,256)
+
+    correction_subsampled_input = np.squeeze(test_subsampled_K[70])
+
+    corrected_output = Correction.Correction(correction_subsampled_input, 
+                                             fnet_output, 
+                                             substep=substep, 
+                                             lowfreqPercent=LOW_FREQ_PERCENT)
+
+    #corrected_output = normalize_data(corrected_output)
+
+    plt.subplot(121),plt.imshow(original_img, cmap = 'gray')
+    plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+    plt.subplot(122),plt.imshow(corrected_output.reshape(256, 256), cmap = 'gray')
+    plt.title('Corrected Image'), plt.xticks([]), plt.yticks([])
     plt.show()
 
 def compute_loss(output, original):
@@ -72,11 +84,14 @@ def eval_loss(net_path, data_path, substep):
     img_paths = get_image_paths(data_path)
     losses = []
     for img_path in img_paths:
-        test_subsampled, test_original = load_image(img_path, substep)
+        test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
         for slice_idx in range(128):
             fnet_input = test_subsampled[slice_idx].reshape(1, 256, 256, 1)
             fnet_output = fnet.predict(fnet_input)
-            corrected_output = Correction.Correction(fnet_input, fnet_output, substep=substep, lowfreqPercent=LOW_FREQ_PERCENT)
+            corrected_output = Correction.Correction(np.squeeze(test_subsampled_k), 
+                                                     fnet_output, 
+                                                     substep=substep, 
+                                                     lowfreqPercent=LOW_FREQ_PERCENT)
             loss = compute_loss(output=corrected_output, original=test_original[slice_idx])
             losses.append(loss)
 
