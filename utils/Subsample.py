@@ -44,7 +44,7 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     data = data
 
     subsampled_img_K = np.ones_like(data, dtype='complex')
-    data = data.astype(int)
+    #data = data.astype(int)
     imgarr = np.ones_like(data)
 
     np.set_printoptions(threshold='nan')
