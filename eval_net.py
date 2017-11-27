@@ -79,7 +79,7 @@ def eval_diff_plot(net_path, img_path, substep):
 def compute_loss(output, original):
     return np.linalg.norm(output.flatten() - original.flatten())
 
-def eval_loss(net_path, data_path, substep):
+def eval_loss(net_path, data_path, substep, size):
     fnet = load_net(net_path)
     img_paths = get_image_paths(data_path)
     losses = []
@@ -99,6 +99,14 @@ def eval_loss(net_path, data_path, substep):
             loss = compute_loss(output=corrected_output, original=ground_truth)
             losses.append(loss)
 
+            if len(losses) >= size:
+                break
+
+        else:
+            continue
+
+        break
+
     return float(sum(losses)) / len(losses)
 
 def main():
@@ -107,6 +115,7 @@ def main():
     parser.add_argument('-s', '--substep', type=int, default=4, help="The substep used for subsampling (4 in the paper)")
     parser.add_argument('-n', '--net_path', type=str, help="The path to a trained FNet")
     parser.add_argument('-d', '--data_path', type=str, help="The path to a test set of Analyze images to evaluate for loss computation")
+    parser.add_argument('-t', '--test_size', type=str, help="The size of the test set (used if --data_path is specified)")
     args = parser.parse_args()
 
     if not args.substep:
@@ -117,7 +126,9 @@ def main():
     if args.img_path:
         eval_diff_plot(args.net_path, args.img_path, args.substep)
     elif args.data_path:
-        print("MSE: {}".format(eval_loss(args.net_path, args.data_path, args.substep)))
+        if not args.size:
+            raise Exception("--test_size must be specified!")
+        print("MSE: {}".format(eval_loss(args.net_path, args.data_path, args.substep, args.test_size)))
     else:
         raise Exception("Either '--img_path' or '--data_path' must be specified!")
 
