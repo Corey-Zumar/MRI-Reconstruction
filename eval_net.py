@@ -58,7 +58,7 @@ def eval_diff_plot(net_path, img_path, substep):
 
     fnet_input = test_subsampled[70].reshape((1, 256, 256, 1))
     fnet_output = fnet.predict(fnet_input)
-    fnet_output = normalize_data(fnet_output).astype(int)
+    fnet_output = normalize_data(fnet_output)
     fnet_output = fnet_output.reshape(256,256)
 
     correction_subsampled_input = np.squeeze(test_subsampled_K[70])
@@ -88,7 +88,7 @@ def eval_loss(net_path, data_path, substep):
         for slice_idx in range(128):
             fnet_input = test_subsampled[slice_idx].reshape(1, 256, 256, 1)
             fnet_output = fnet.predict(fnet_input)
-            fnet_output = normalize_data(fnet_output).astype(int)
+            fnet_output = normalize_data(fnet_output)
             fnet_output = fnet_output.reshape(256,256)
             corrected_output = Correction.Correction(test_subsampled_k[slice_idx], 
                                                      fnet_output, 
