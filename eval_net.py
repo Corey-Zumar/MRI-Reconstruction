@@ -37,7 +37,7 @@ def load_image(image_path):
 def load_image(image_path, substep):
     original_img = nib.load(image_path)
 
-    original_data = np.array(np.squeeze(original_img.get_data()) dtype=np.float32)
+    original_data = np.array(np.squeeze(original_img.get_data()), dtype=np.float32)
     original_data -= original_data.min()
     original_data = original_data / original_data.max()
     original_data = original_data * 255.0
