@@ -99,6 +99,8 @@ def eval_loss(net_path, data_path, substep, size):
             loss = compute_loss(output=corrected_output, original=ground_truth)
             losses.append(loss)
 
+            print("Evaluated {} images".format(len(losses)))
+
             if len(losses) >= size:
                 break
 
