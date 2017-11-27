@@ -126,7 +126,7 @@ def main():
     if args.img_path:
         eval_diff_plot(args.net_path, args.img_path, args.substep)
     elif args.data_path:
-        if not args.size:
+        if not args.test_size:
             raise Exception("--test_size must be specified!")
         print("MSE: {}".format(eval_loss(args.net_path, args.data_path, args.substep, args.test_size)))
     else:
