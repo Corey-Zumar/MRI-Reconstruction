@@ -78,10 +78,13 @@ def main():
     parser.add_argument('-d', '--data_path', type=str, help="The path to a test set of Analyze images to evaluate for loss computation")
     args = parser.parse_args()
 
+    if not args.substep:
+        raise Exception("--substep must be specified!")
+
     if args.img_path:
-        eval_diff_plot(args.img_path)
+        eval_diff_plot(args.img_path, args.substep)
     elif args.data_path:
-        print("MSE: {}".format(eval_loss(args.data_path)))
+        print("MSE: {}".format(eval_loss(args.data_path, args.substep)))
     else:
         raise Exception("Either '--img_path' or '--dat_path' must be specified!")
 
