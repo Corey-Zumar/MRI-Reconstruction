@@ -77,7 +77,7 @@ def eval_diff_plot(net_path, img_path, substep):
     plt.show()
 
 def compute_loss(output, original):
-    return np.linalg.norm(output.flatten() - original.flatten())
+    return np.mean((output - original)**2)
 
 def eval_loss(net_path, data_path, substep, size):
     fnet = load_net(net_path)
@@ -109,7 +109,12 @@ def eval_loss(net_path, data_path, substep, size):
 
         break
 
-    return float(sum(losses)) / len(losses)
+    mse = np.mean(losses)
+    std = np.std(losses)
+
+    print("MSE: {}, STD: {}".format(mse, std))
+
+    return losses
 
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
