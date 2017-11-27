@@ -26,9 +26,21 @@ def get_image_paths(data_path):
 
     return oasis_raw_paths
 
+def load_image(image_path):
+    img = nib.load(image_path)
+    data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+    data -= data.min()
+    data = data / data.max()
+    data = data * 255.0
+    return data
+
 def load_image(image_path, substep):
     original_img = nib.load(image_path)
-    original_data = np.squeeze(original_img.get_data())
+
+    original_data = np.array(np.squeeze(original_img.get_data(), dtype=np.float32))
+    original_data -= original_data.min()
+    original_data = original_data / original_data.max()
+    original_data = original_data * 255.0
     original_data = np.moveaxis(original_data, -1, 0).reshape(128, 256, 256, 1)
 
     subsampled_img, _ = Subsample.subsample(image_path, substep=substep, lowfreqPercent=LOW_FREQ_PERCENT)
