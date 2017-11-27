@@ -87,6 +87,7 @@ def eval_loss(net_path, data_path, substep, size):
     fnet = load_net(net_path)
     img_paths = get_image_paths(data_path)
     losses = []
+    aliased_losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
         for slice_idx in range(47, 82):
@@ -102,6 +103,8 @@ def eval_loss(net_path, data_path, substep, size):
             ground_truth = normalize_data(test_original[slice_idx])
             loss = compute_loss(output=corrected_output, original=ground_truth)
             losses.append(loss)
+            aliased_loss = compute_loss(output=test_subsampled, original=ground_truth)
+            aliased_losses.append(aliased_loss)
             print("Evaluated {} images".format(len(losses)))
             if len(losses) >= size:
                 break
@@ -114,7 +117,9 @@ def eval_loss(net_path, data_path, substep, size):
     mse = np.mean(losses)
     std = np.std(losses)
 
-    print("MSE: {}, STD: {}".format(mse, std))
+    aliased_mse = np.mean(aliased_losses)
+
+    print("Aliased MSE: {}, MSE: {}, STD: {}".format(aliased_mse, mse, std))
 
     return losses
 
