@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def subsample(analyze_img_path, substep, lowfreqPercent):
+def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     """
     Subsamples an MRI image in Analyze 7.5 format
     Note: must have .hdr file
@@ -38,9 +38,15 @@ def subsample(analyze_img_path, substep, lowfreqPercent):
     img = nib.load(analyze_img_path)
     hdr = img.get_header()
     data = img.get_data()
+    data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+    data -= data.min()
+    data = data / data.max()
+    data = data * 255.0
+    data += 0.5
 
-    imgarr = np.ones_like(data)
     subsampled_img_K = np.ones_like(data, dtype='complex')
+    data = data.astype(int)
+    imgarr = np.ones_like(data)
 
     np.set_printoptions(threshold='nan')
 
@@ -79,13 +85,17 @@ def subsample(analyze_img_path, substep, lowfreqPercent):
         #print(slice)
         #print(type(imgarr))
         reconsubshift = abs(np.fft.ifft2(np.fft.ifftshift(subshift)).real).astype(float)
-        reconsubshift -= reconsubshift.min()
-        reconsubshift /= reconsubshift.max()
-        reconsubshift *= 255.0
-        imgarr[:,:,slice,0] = reconsubshift
+        #reconsubshift -= reconsubshift.min()
+        #reconsubshift /= reconsubshift.max()
+        #reconsubshift *= 255.0
+        imgarr[:,:,slice] = reconsubshift
 
-        subsampled_img_K[:,:,slice,0] = subshift
-
-        print("Loaded slice: {} of image with path: {}".format(slice, analyze_img_path))
-
+        subsampled_img_K[:,:,slice] = subshift
+    #    if slice == 70:
+    #        plt.subplot(121),plt.imshow(20*np.log(np.abs(subshift)), cmap='gray')
+    #        plt.title('A        B            C          D'), plt.xticks([]), plt.yticks([])
+    #        plt.subplot(122),plt.imshow(20*np.log(np.abs(tshift)), cmap = 'gray')
+    #        plt.title('Subsampled'), plt.xticks([]), plt.yticks([])
+    #        plt.show()
+    #print(subsampled_img_K[:,:,70])
     return imgarr, subsampled_img_K
