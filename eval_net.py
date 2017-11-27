@@ -30,7 +30,7 @@ def normalize_data(data):
     data = np.copy(data)
     data -= data.min()
     data = data / data.max()
-    data = data
+    data = data * 255.0
     return data
 
 def load_image(image_path, substep):
@@ -54,7 +54,7 @@ def eval_diff_plot(net_path, img_path, substep):
     test_subsampled, test_subsampled_K, test_original = load_image(img_path, substep)
     fnet = load_net(net_path)
 
-    original_img = test_original[70].reshape(256, 256)
+    original_img = normalize_data(test_original[70].reshape(256, 256))
 
     fnet_input = test_subsampled[70].reshape((1, 256, 256, 1))
     fnet_output = fnet.predict(fnet_input)
@@ -70,6 +70,8 @@ def eval_diff_plot(net_path, img_path, substep):
 
     #corrected_output = normalize_data(corrected_output)
 
+    print(compute_loss(original_img, corrected_output))
+
     plt.subplot(121),plt.imshow(original_img, cmap = 'gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
     plt.subplot(122),plt.imshow(corrected_output.reshape(256, 256), cmap = 'gray')
@@ -77,6 +79,8 @@ def eval_diff_plot(net_path, img_path, substep):
     plt.show()
 
 def compute_loss(output, original):
+    output = output / 255.0
+    original = original / 255.0
     return np.mean((output - original)**2)
 
 def eval_loss(net_path, data_path, substep, size):

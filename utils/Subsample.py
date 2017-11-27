@@ -41,7 +41,8 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
     data -= data.min()
     data = data / data.max()
-    data = data
+    data = data * 255.0
+    #data += 0.5
 
     subsampled_img_K = np.ones_like(data, dtype='complex')
     #data = data.astype(int)
