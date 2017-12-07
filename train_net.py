@@ -211,7 +211,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
     parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
-    parser.add_argument('-e', '--training_error', type=int, default=1400, help="The type of error to use for training FNet")
+    parser.add_argument('-e', '--training_error', type=str, help="The type of error to use for training FNet")
 
     args = parser.parse_args()
 
