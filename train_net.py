@@ -10,7 +10,7 @@ from keras.models import Model
 from keras.layers import Input, Dense, Activation, concatenate, UpSampling2D
 from keras.layers.convolutional import Conv2D, Conv2DTranspose
 from keras.layers.pooling import MaxPooling2D, AveragePooling2D
-from keras.losses import mean_squared_error
+from keras.losses import mean_squared_error, mean_absolute_error
 from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
@@ -35,10 +35,14 @@ OASIS_DATA_DIRECTORY_PREFIX = "OAS"
 OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
 OASIS_DATA_EXTENSION_IMG = ".img"
 
+FNET_ERROR_MSE = "squared"
+FNET_ERROR_MAE = "absolute"
+
 class FNet:
 
-	def __init__(self):
+	def __init__(self, error):
 		self.architecture_exists = False
+		self.error = error
 
 	def train(self, y_folded, y_original):
 		"""
@@ -66,6 +70,14 @@ class FNet:
 					   validation_split=.2,
 					   verbose=1,
 					   callbacks=[checkpoint_callback])
+
+	def _parse_error(self):
+		if self.error == FNET_ERROR_MSE:
+			return mean_squared_error
+		elif self.error == FNET_ERROR_MAE:
+			return mean_absolute_error
+		else:
+			raise("Attempted train with an invalid loss function!")
 
 
 	def _get_initializer_seed(self):
@@ -135,8 +147,10 @@ class FNet:
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
+
 		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=8)
-		self.model.compile(optimizer=optimizer, loss=mean_squared_error, metrics=[mean_squared_error])
+
+		self.model.compile(optimizer=optimizer, loss=self._parse_error(), metrics=[mean_squared_error])
 
 		self.architecture_exists = True
 
@@ -197,6 +211,8 @@ def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
     parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
+    parser.add_argument('-e', '--training_error', type=int, default=1400, help="The type of error to use for training FNet")
+
     args = parser.parse_args()
 
     x_train, y_train = load_and_subsample_images(args.disk_path)
@@ -210,7 +226,7 @@ def main():
     	x_train = x_train[training_idxs]
     	y_train = y_train[training_idxs]
 
-    net = FNet()
+    net = FNet(args.training_error)
     net.train(x_train, y_train)
 
 if __name__ == "__main__":
