@@ -162,7 +162,7 @@ def load_image(image_path):
 	data = data * 255.0
 	return data
 
-def load_and_subsample_images(disk_path):
+def load_and_subsample_images(disk_path, num_imgs):
 	"""
 	Parameters
 	------------
@@ -181,6 +181,8 @@ def load_and_subsample_images(disk_path):
 		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
 			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
+	num_output_imgs = 0
+
 	x_train = None
 	y_train = None
 
@@ -198,14 +200,16 @@ def load_and_subsample_images(disk_path):
 		subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0)[relevant_idxs], dtype=np.float32)
 		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
 
-		print(subsampled_img.shape)
-
 		if i == 0:
 			x_train = subsampled_img
 			y_train = original_img
 		else:
 			x_train = np.vstack([x_train, subsampled_img])
 			y_train = np.vstack([y_train, original_img])
+
+		num_output_imgs += 1
+		if num_output_imgs >= num_imgs:
+			break
 
 	return x_train, y_train
 
