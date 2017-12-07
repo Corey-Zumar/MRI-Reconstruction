@@ -195,8 +195,10 @@ def load_and_subsample_images(disk_path):
 		subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
 		original_img = load_image(raw_img_path)
 
-		subsampled_img = np.array(np.moveaxis(subsampled_img, -2, 0)[relevant_idxs], dtype=np.float32)
+		subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 2), -2, 0)[relevant_idxs], dtype=np.float32)
 		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
+
+		print(subsampled_img.shape)
 
 		if i == 0:
 			x_train = subsampled_img
