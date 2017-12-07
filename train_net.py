@@ -221,7 +221,7 @@ def main():
 
     args = parser.parse_args()
 
-    x_train, y_train = load_and_subsample_images(args.disk_path)
+    x_train, y_train = load_and_subsample_images(args.disk_path, args.training_size)
 
     if len(x_train) > args.training_size:
     	# Select the most relevant slices from each patient
