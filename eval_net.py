@@ -16,12 +16,16 @@ LOW_FREQ_PERCENT = .04
 # Data paths
 OASIS_DATA_DIRECTORY_PREFIX = "OAS"
 OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
-OASIS_DATA_EXTENSION_IMG = ".img"
+
+ANALYZE_DATA_EXTENSION_IMG = ".img"
+
+DATASET_NAME_OASIS = "oasis"
+DATASET_NAME_PROSTATE = "prostate"
 
 LOSS_TYPE_MSE = "mse"
 LOSS_TYPE_SSIM = "ssim"
 
-def get_image_paths(data_path):
+def get_oasis_image_paths(data_path):
     oasis_subdirs = [subdir for subdir in os.listdir(data_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
     oasis_raw_paths = []
     for subdir in oasis_subdirs:
@@ -30,6 +34,10 @@ def get_image_paths(data_path):
             oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
     return oasis_raw_paths
+
+def get_prostate_image_paths(data_path):
+    ps_subpaths = [path for path in os.listdir(disk_path) if ANALYZE_DATA_EXTENSION_IMG in path]
+    return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
 
 def normalize_data(data):
     data = np.copy(data)
@@ -59,14 +67,14 @@ def eval_diff_plot(net_path, img_path, substep):
     test_subsampled, test_subsampled_K, test_original = load_image(img_path, substep)
     fnet = load_net(net_path)
 
-    original_img = normalize_data(test_original[70].reshape(256, 256))
+    original_img = normalize_data(test_original[5].reshape(256, 256))
 
-    fnet_input = test_subsampled[70].reshape((1, 256, 256, 1))
+    fnet_input = test_subsampled[5].reshape((1, 256, 256, 1))
     fnet_output = fnet.predict(fnet_input)
     fnet_output = normalize_data(fnet_output)
     fnet_output = fnet_output.reshape(256,256)
 
-    correction_subsampled_input = np.squeeze(test_subsampled_K[70])
+    correction_subsampled_input = np.squeeze(test_subsampled_K[5])
 
     corrected_output = Correction.Correction(correction_subsampled_input, 
                                              fnet_output, 
@@ -94,14 +102,23 @@ def compute_loss(output, original, loss_type):
         raise Exception("Attempted to compute an invalid loss!")
 
 
-def eval_loss(net_path, data_path, substep, size, loss_type):
+def eval_loss(net_path, data_path, dataset_name, substep, size, loss_type):
+    if dataset_name == DATASET_NAME_OASIS:
+        img_paths = get_oasis_image_paths(data_path)
+        slice_idxs = range(47, 82)
+    elif dataset_name == DATASET_NAME_PROSTATE:
+        img_paths = get_prostate_image_paths(data_path)
+        slice_idxs = range(0, 21)
+    else:
+        raise Exception("Invalid dataset name specified!")
+
     fnet = load_net(net_path)
     img_paths = get_image_paths(data_path)
     losses = []
     aliased_losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
-        for slice_idx in range(47, 82):
+        for slice_idx in slice_idxs:
             fnet_input = test_subsampled[slice_idx].reshape(1, 256, 256, 1)
             fnet_output = fnet.predict(fnet_input)
             fnet_output = normalize_data(fnet_output)
@@ -146,6 +163,7 @@ def main():
     parser.add_argument('-d', '--data_path', type=str, help="The path to a test set of Analyze images to evaluate for loss computation")
     parser.add_argument('-t', '--test_size', type=str, help="The size of the test set (used if --data_path is specified)")
     parser.add_argument('-l', '--loss_type', type=str, default="mse", help="The type of evaluation loss. One of: 'mse', 'ssim'")
+    parser.add_argument('-dn', '--dataset_name', type=str, help="The name of the training dataset - either 'oasis' or 'prostate'")
     args = parser.parse_args()
 
     if not args.substep:
