@@ -197,12 +197,12 @@ def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	A tuple of training data and ground truth images, each represented
 	as numpy float arrays of dimension N x 256 x 256 x 1.
 	"""
-	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
-	oasis_raw_paths = []
-	for subdir in oasis_subdirs:
-		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
-		for raw_fname in [fname for fname in os.listdir(raws_subdir) if ANALYZE_DATA_EXTENSION_IMG in fname]:
-			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
+	if ds_name == DATASET_NAME_OASIS:
+		file_paths = get_oasis_file_paths(disk_path)
+	elif ds_name == DATASET_NAME_PROSTATE:
+		file_paths = get_prostate_file_paths(disk_path)
+	else:
+		raise Exception("Attempted to use an unsupported dataset")
 
 	num_output_imgs = 0
 
@@ -214,8 +214,8 @@ def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	# imagery
 	relevant_idxs = range(47,82)
 
-	for i in range(len(oasis_raw_paths)):
-		raw_img_path = oasis_raw_paths[i]
+	for i in range(len(file_paths)):
+		raw_img_path = file_paths[i]
 
 		subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
 		original_img = load_image(raw_img_path)
