@@ -39,11 +39,11 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     hdr = img.get_header()
     data = img.get_data()
     data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+    data = data[63:319,63:319,:]
     data -= data.min()
     data = data / data.max()
     data = data * 255.0
-    data += 0.5
-
+  
     subsampled_img_K = np.ones_like(data, dtype='complex')
     #data = data.astype(int)
     imgarr = np.ones_like(data)
