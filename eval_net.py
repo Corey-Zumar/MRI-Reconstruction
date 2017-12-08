@@ -175,7 +175,7 @@ def main():
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
-        eval_loss(args.net_path, args.data_path, args.substep, int(args.test_size), args.loss_type)
+        eval_loss(args.net_path, args.data_path, args.dataset_name, args.substep, int(args.test_size), args.loss_type)
     else:
         raise Exception("Either '--img_path' or '--data_path' must be specified!")
 
