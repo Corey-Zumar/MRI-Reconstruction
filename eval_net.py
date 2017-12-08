@@ -131,9 +131,9 @@ def eval_loss(net_path, data_path, substep, size, loss_type):
     aliased_mean = np.mean(aliased_losses)
     aliased_std = np.std(aliased_losses)
 
-    print("Aliased MEAN: {}, Aliased STD: {}, MEAN: {}, STD: {}".format(aliased_mse, 
+    print("Aliased MEAN: {}, Aliased STD: {}, MEAN: {}, STD: {}".format(aliased_mean, 
                                                                       aliased_std, 
-                                                                      mse, 
+                                                                      mean, 
                                                                       std))
 
     return losses
