@@ -183,7 +183,7 @@ def get_prostate_file_paths(disk_path):
 	ps_subpaths = [path for path in os.listdir(disk_path) if ANALYZE_DATA_EXTENSION_IMG in path]
 	return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
 
-def load_and_subsample(image_path):
+def load_and_subsample(raw_img_path):
 	subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
 	subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0), dtype=np.float32)
 	original_img = load_image(raw_img_path)
