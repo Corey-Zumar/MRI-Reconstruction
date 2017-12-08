@@ -39,6 +39,8 @@ ANALYZE_DATA_EXTENSION_IMG = ".img"
 DATASET_NAME_OASIS = "oasis"
 DATASET_NAME_PROSTATE = "prostate"
 
+NUM_SAMPLE_SLICES = 35
+
 FNET_ERROR_MSE = "squared"
 FNET_ERROR_MAE = "absolute"
 
@@ -181,6 +183,23 @@ def get_prostate_file_paths(disk_path):
 	ps_subpaths = [path for path in os.listdir(disk_path) if ANALYZE_DATA_EXTENSION_IMG in path]
 	return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
 
+def load_and_subsample(image_path):
+	subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
+	subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0), dtype=np.float32)
+	original_img = load_image(raw_img_path)
+	original_img = np.moveaxis(original_img, -1, 0)
+	img_len = len(original_img)
+	original_img = original_img.reshape(img_len, 256, 256, 1)
+	if img_len > NUM_SAMPLE_SLICES:
+		relevant_idx_low = (img_len - NUM_SAMPLE_SLICES) / 2
+		relevant_idx_high = relevant_idx_low + NUM_SAMPLE_SLICES
+
+		subsampled_img = subsampled_img[relevant_idxs]
+		original_img = subsampled_img[relevant_idxs]
+
+	return subsampled_img, original_img
+
+
 def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	"""
 	Parameters
@@ -217,11 +236,7 @@ def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	for i in range(len(file_paths)):
 		raw_img_path = file_paths[i]
 
-		subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
-		original_img = load_image(raw_img_path)
-
-		subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0)[relevant_idxs], dtype=np.float32)
-		original_img = np.moveaxis(original_img, -1, 0).reshape(128, 256, 256, 1)[relevant_idxs]
+		subsampled_img, original_img = load_and_subsample(raw_img_path)
 
 		if i == 0:
 			x_train = subsampled_img
