@@ -157,6 +157,7 @@ class FNet:
 def load_image(image_path):
 	img = nib.load(image_path)
 	data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
+	data = data[63:319,63:319,:]
 	data -= data.min()
 	data = data / data.max()
 	data = data * 255.0
