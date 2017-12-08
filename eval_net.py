@@ -37,7 +37,7 @@ def get_oasis_image_paths(data_path):
 
 def get_prostate_image_paths(data_path):
     ps_subpaths = [path for path in os.listdir(data_path) if ANALYZE_DATA_EXTENSION_IMG in path]
-    return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
+    return [os.path.join(data_path, subpath) for subpath in ps_subpaths]
 
 def normalize_data(data):
     data = np.copy(data)
