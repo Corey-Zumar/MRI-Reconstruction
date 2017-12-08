@@ -9,12 +9,17 @@ from utils import Subsample, Correction
 
 from matplotlib import pyplot as plt
 
+from skimage.measure import compare_ssim as ssim
+
 LOW_FREQ_PERCENT = .04
 
 # Data paths
 OASIS_DATA_DIRECTORY_PREFIX = "OAS"
 OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
 OASIS_DATA_EXTENSION_IMG = ".img"
+
+LOSS_TYPE_MSE = "mse"
+LOSS_TYPE_SSIM = "ssim"
 
 def get_image_paths(data_path):
     oasis_subdirs = [subdir for subdir in os.listdir(data_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
@@ -78,12 +83,18 @@ def eval_diff_plot(net_path, img_path, substep):
     plt.title('Corrected Image'), plt.xticks([]), plt.yticks([])
     plt.show()
 
-def compute_loss(output, original):
+def compute_loss(output, original, loss_type):
     output = output / 255.0
     original = original / 255.0
-    return np.mean((output - original)**2)
+    if loss_type == LOSS_TYPE_MSE:
+        return np.mean((output - original)**2)
+    elif loss_type == LOSS_TYPE_SSIM:
+        return ssim(output, original)
+    else:
+        raise Exception("Attempted to compute an invalid loss!")
 
-def eval_loss(net_path, data_path, substep, size):
+
+def eval_loss(net_path, data_path, substep, size, loss_type):
     fnet = load_net(net_path)
     img_paths = get_image_paths(data_path)
     losses = []
@@ -101,7 +112,7 @@ def eval_loss(net_path, data_path, substep, size):
                                                      lowfreqPercent=LOW_FREQ_PERCENT)
 
             ground_truth = normalize_data(test_original[slice_idx])
-            loss = compute_loss(output=corrected_output, original=ground_truth)
+            loss = compute_loss(output=corrected_output, original=ground_truth, loss_type=loss_type)
             losses.append(loss)
             aliased_loss = compute_loss(output=test_subsampled[slice_idx], original=ground_truth)
             aliased_losses.append(aliased_loss)
@@ -114,13 +125,13 @@ def eval_loss(net_path, data_path, substep, size):
 
         break
 
-    mse = np.mean(losses)
+    mean = np.mean(losses)
     std = np.std(losses)
 
-    aliased_mse = np.mean(aliased_losses)
+    aliased_mean = np.mean(aliased_losses)
     aliased_std = np.std(aliased_losses)
 
-    print("Aliased MSE: {}, Aliased STD: {}, MSE: {}, STD: {}".format(aliased_mse, 
+    print("Aliased MEAN: {}, Aliased STD: {}, MEAN: {}, STD: {}".format(aliased_mse, 
                                                                       aliased_std, 
                                                                       mse, 
                                                                       std))
@@ -134,6 +145,7 @@ def main():
     parser.add_argument('-n', '--net_path', type=str, help="The path to a trained FNet")
     parser.add_argument('-d', '--data_path', type=str, help="The path to a test set of Analyze images to evaluate for loss computation")
     parser.add_argument('-t', '--test_size', type=str, help="The size of the test set (used if --data_path is specified)")
+    parser.add_argument('-l', '--loss_type', type=str, default="mse", help="The type of evaluation loss. One of: 'mse', 'ssim'")
     args = parser.parse_args()
 
     if not args.substep:
@@ -146,7 +158,7 @@ def main():
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
-        eval_loss(args.net_path, args.data_path, args.substep, int(args.test_size))
+        eval_loss(args.net_path, args.data_path, args.substep, int(args.test_size), args.loss_type)
     else:
         raise Exception("Either '--img_path' or '--data_path' must be specified!")
 
