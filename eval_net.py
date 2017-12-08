@@ -67,7 +67,10 @@ def eval_diff_plot(net_path, img_path, substep):
     test_subsampled, test_subsampled_K, test_original = load_image(img_path, substep)
     fnet = load_net(net_path)
 
-    original_img = normalize_data(test_original[5].reshape(256, 256))
+    print(test_original.shape)
+    print(test_subsampled.shape)
+
+    original_img = normalize_data(test_original[5][63:319,63:319].reshape(256, 256))
 
     fnet_input = test_subsampled[5].reshape((1, 256, 256, 1))
     fnet_output = fnet.predict(fnet_input)
@@ -80,10 +83,6 @@ def eval_diff_plot(net_path, img_path, substep):
                                              fnet_output, 
                                              substep=substep, 
                                              lowfreqPercent=LOW_FREQ_PERCENT)
-
-    #corrected_output = normalize_data(corrected_output)
-
-    print(compute_loss(original_img, corrected_output))
 
     plt.subplot(121),plt.imshow(original_img, cmap = 'gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
