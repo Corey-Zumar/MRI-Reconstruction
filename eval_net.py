@@ -84,8 +84,8 @@ def eval_diff_plot(net_path, img_path, substep):
     plt.show()
 
 def compute_loss(output, original, loss_type):
-    output = output / 255.0
-    original = original / 255.0
+    output = np.array(output, dtype=np.float64) / 255.0
+    original = np.array(original, dtype=np.float64) / 255.0
     if loss_type == LOSS_TYPE_MSE:
         return np.mean((output - original)**2)
     elif loss_type == LOSS_TYPE_SSIM:
