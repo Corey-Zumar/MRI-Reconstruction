@@ -114,7 +114,7 @@ def eval_loss(net_path, data_path, substep, size, loss_type):
             ground_truth = normalize_data(test_original[slice_idx])
             loss = compute_loss(output=corrected_output, original=ground_truth, loss_type=loss_type)
             losses.append(loss)
-            aliased_loss = compute_loss(output=test_subsampled[slice_idx], original=ground_truth)
+            aliased_loss = compute_loss(output=test_subsampled[slice_idx], original=ground_truth, loss_type=loss_type)
             aliased_losses.append(aliased_loss)
             print("Evaluated {} images".format(len(losses)))
             if len(losses) >= size:
