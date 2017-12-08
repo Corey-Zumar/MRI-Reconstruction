@@ -112,7 +112,6 @@ def eval_loss(net_path, data_path, dataset_name, substep, size, loss_type):
         raise Exception("Invalid dataset name specified!")
 
     fnet = load_net(net_path)
-    img_paths = get_image_paths(data_path)
     losses = []
     aliased_losses = []
     for img_path in img_paths:
