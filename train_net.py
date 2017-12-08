@@ -33,7 +33,11 @@ CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
 # Data paths
 OASIS_DATA_DIRECTORY_PREFIX = "OAS"
 OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
-OASIS_DATA_EXTENSION_IMG = ".img"
+
+ANALYZE_DATA_EXTENSION_IMG = ".img"
+
+DATASET_NAME_OASIS = "oasis"
+DATASET_NAME_PROSTATE = "prostate"
 
 FNET_ERROR_MSE = "squared"
 FNET_ERROR_MAE = "absolute"
@@ -163,12 +167,30 @@ def load_image(image_path):
 	data = data * 255.0
 	return data
 
-def load_and_subsample_images(disk_path, num_imgs):
+def get_oasis_file_paths(disk_path):
+	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
+	oasis_raw_paths = []
+	for subdir in oasis_subdirs:
+		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
+		for raw_fname in [fname for fname in os.listdir(raws_subdir) if ANALYZE_DATA_EXTENSION_IMG in fname]:
+			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
+
+	return oasis_raw_paths
+
+def get_prostate_file_paths(disk_path):
+	ps_subpaths = [path for path in os.listdir(disk_path) if ANALYZE_DATA_EXTENSION_IMG in path]
+	return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
+
+def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	"""
 	Parameters
 	------------
 	disk_path : str
 		A path to an OASIS disc directory
+	ds_name : str
+		The name of the dataset
+	num_imgs : int
+		The number of images to load
 
 	Returns
 	------------
@@ -179,7 +201,7 @@ def load_and_subsample_images(disk_path, num_imgs):
 	oasis_raw_paths = []
 	for subdir in oasis_subdirs:
 		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
-		for raw_fname in [fname for fname in os.listdir(raws_subdir) if OASIS_DATA_EXTENSION_IMG in fname]:
+		for raw_fname in [fname for fname in os.listdir(raws_subdir) if ANALYZE_DATA_EXTENSION_IMG in fname]:
 			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
 
 	num_output_imgs = 0
@@ -219,10 +241,11 @@ def main():
     parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
     parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
     parser.add_argument('-e', '--training_error', type=str, help="The type of error to use for training FNet")
+    parser.add_argument('-n', '--dataset_name', type=str, help="The name of the training dataset - either 'oasis' or 'prostate'")
 
     args = parser.parse_args()
 
-    x_train, y_train = load_and_subsample_images(args.disk_path, args.training_size)
+    x_train, y_train = load_and_subsample_images(args.disk_path, args.dataset_name, args.training_size)
 
     if len(x_train) > args.training_size:
     	# Select the most relevant slices from each patient
