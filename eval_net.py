@@ -107,7 +107,7 @@ def eval_loss(net_path, data_path, dataset_name, substep, size, loss_type):
         slice_idxs = range(47, 82)
     elif dataset_name == DATASET_NAME_PROSTATE:
         img_paths = get_prostate_image_paths(data_path)
-        slice_idxs = range(0, 21)
+        slice_idxs = range(0, 19)
     else:
         raise Exception("Invalid dataset name specified!")
 
