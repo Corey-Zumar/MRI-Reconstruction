@@ -41,6 +41,7 @@ def get_prostate_image_paths(data_path):
 
 def normalize_data(data):
     data = np.copy(data)
+    data = data[63:319,63:319]
     data -= data.min()
     data = data / data.max()
     data = data * 255.0
@@ -92,7 +93,7 @@ def eval_diff_plot(net_path, img_path, substep):
 
 def compute_loss(output, original, loss_type):
     output = np.array(output, dtype=np.float64) / 255.0
-    original = np.array(original[63:319,63:319], dtype=np.float64) / 255.0
+    original = np.array(original, dtype=np.float64) / 255.0
     if loss_type == LOSS_TYPE_MSE:
         return np.mean((output - original)**2)
     elif loss_type == LOSS_TYPE_SSIM:
