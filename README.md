@@ -17,7 +17,7 @@ The current implementation is tailored to support the reconstruction of sagittal
    
 ### Evaluating
 
-1. Obtain a saggital plane brain test image in [Analyze 7.5](https://rportal.mayo.edu/bir/ANALYZE75.pdf) format.
+1. Obtain a sagittal plane brain test image in [Analyze 7.5](https://rportal.mayo.edu/bir/ANALYZE75.pdf) format.
 
 2. Evaluate the reconstruction pipeline on a sagittal plane brain test image as follows:
 
