@@ -1,22 +1,21 @@
 import numpy as np
 import nibabel as nib
 
-TARGET_SLICE_WIDTH = 256
-TARGET_SLICE_HEIGHT = 256
+from .constants import SLICE_WIDTH, SLICE_HEIGHT
 
 def center_crop(img_data):
     slice_width, slice_height, _ = img_data.shape
-    if slice_width < TARGET_SLICE_WIDTH:
+    if slice_width < SLICE_WIDTH:
         raise Exception(
             "The width of each MRI image slice must be at least {} pixels!".
-            format(TARGET_SLICE_WIDTH))
-    elif slice_height < TARGET_SLICE_HEIGHT:
+            format(SLICE_WIDTH))
+    elif slice_height < SLICE_HEIGHT:
         raise Exception(
             "The height of each MRI image slice must be at least {} pixels!".
-            format(TARGET_SLICE_HEIGHT))
+            format(SLICE_HEIGHT))
 
-    width_crop = (slice_width - TARGET_SLICE_WIDTH) // 2
-    height_crop = (slice_height - TARGET_SLICE_HEIGHT) // 2
+    width_crop = (slice_width - SLICE_WIDTH) // 2
+    height_crop = (slice_height - SLICE_HEIGHT) // 2
 
     if width_crop > 0:
         img_data = img_data[width_crop:-width_crop,:,:]
@@ -25,6 +24,10 @@ def center_crop(img_data):
 
     return img_data
 
+def normalize(img_data):
+    img_data -= img_data.min()
+    img_data = img_data / img_data.max()
+    img_data = img_data * 255.0
 
 def load_image(analyze_img_path):
     """
@@ -74,8 +77,6 @@ def load_image_data(analyze_img_path):
     img_data = load_image(analyze_img_path).get_data()
     img_data = np.squeeze(img_data).astype(np.float32)
     img_data = center_crop(img_data)
-    img_data -= img_data.min()
-    img_data = img_data / img_data.max()
-    img_data = img_data * 255.0
+    img_data = normalize(img_data)
 
     return img_data
