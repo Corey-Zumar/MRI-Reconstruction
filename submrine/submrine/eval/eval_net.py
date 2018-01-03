@@ -5,10 +5,8 @@ import nibabel as nib
 import keras
 import numpy as np
 
-from utils import subsample, correct_output
-
+from ..utils import subsample, correct_output
 from matplotlib import pyplot as plt
-
 from skimage.measure import compare_ssim as ssim
 
 LOW_FREQ_PERCENT = .04

@@ -14,7 +14,7 @@ from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
-from utils import subsampling, load_image_data, multi_gpu_model
+from ..utils import subsample, load_image_data, multi_gpu_model
 
 # Data loading
 ANALYZE_DATA_EXTENSION_IMG = ".img"
@@ -33,8 +33,9 @@ CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
 
 
 class FNet:
-    def __init__(self, error):
+    def __init__(self, num_gpus, error):
         self.architecture_exists = False
+        self.num_gpus = num_gpus
         self.error = error
 
     def train(self, y_folded, y_original, batch_size, num_epochs):
@@ -76,7 +77,7 @@ class FNet:
         elif self.error == FNET_ERROR_MAE:
             return mean_absolute_error
         else:
-            raise ("Attempted train with an invalid loss function!")
+            raise Exception("Attempted to train network with an invalid loss function!")
 
     def _get_initializer_seed(self):
         epoch = datetime.utcfromtimestamp(0)
@@ -84,7 +85,7 @@ class FNet:
         millis_since_epoch = (curr_time - epoch).total_seconds() * 1000
         return int(millis_since_epoch)
 
-    def _create_architecture(self, num_gpus):
+    def _create_architecture(self):
         inputs = Input(shape=(256, 256, 1))
 
         weights_initializer = RandomNormal(
@@ -198,8 +199,8 @@ class FNet:
             lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
         self.model = Model(inputs=[inputs], outputs=[outputs])
-        if num_gpus >= 2:
-            self.model = multi_gpu_model(self.model, gpus=num_gpus)
+        if self.num_gpus >= 2:
+            self.model = multi_gpu_model(self.model, gpus=self.num_gpus)
 
         self.model.compile(
             optimizer=optimizer,
@@ -227,9 +228,9 @@ def get_img_file_paths(dir_path):
 
 
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
-    original_img = load_image_data(analyze_image_path=raw_img_path)
-    subsampled_img = subsample(
-        analyze_image_data=original_img,
+    original_img = load_image_data(analyze_img_path=raw_img_path)
+    subsampled_img, _ = subsample(
+        analyze_img_data=original_img,
         substep=substep,
         low_freq_percent=low_freq_percent)
 
@@ -237,9 +238,11 @@ def load_and_subsample(raw_img_path, substep, low_freq_percent):
     original_img = np.expand_dims(original_img, -1)
     subsampled_img = np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0)
 
-    if len(original_img) > NUM_SAMPLE_SLICES:
-        relevant_idx_low = (img_len - NUM_SAMPLE_SLICES) // 2
+    num_slices = len(original_img)
+    if num_slices > NUM_SAMPLE_SLICES:
+        relevant_idx_low = (num_slices - NUM_SAMPLE_SLICES) // 2
         relevant_idx_high = relevant_idx_low + NUM_SAMPLE_SLICES
+        relevant_idxs = range(relevant_idx_low, relevant_idx_high)
 
         subsampled_img = subsampled_img[relevant_idxs]
         original_img = original_img[relevant_idxs]
@@ -314,6 +317,7 @@ def main():
         '-e',
         '--training_error',
         type=str,
+        default='mse',
         help=
         "The type of error to use for training the reconstruction network (either 'mse' or 'mae')"
     )
@@ -354,6 +358,9 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.disk_path:
+        raise Exception("The path to a disk (directory) of MR images in Analyze 7.5 format must be specified!")
+
     x_train, y_train = load_and_subsample_images(
         disk_path=args.disk_path,
         num_imgs=args.training_size,
@@ -368,9 +375,8 @@ def main():
         x_train = x_train[training_idxs]
         y_train = y_train[training_idxs]
 
-    net = FNet(args.training_error)
-    net.train(x_train, y_train)
-
-
-if __name__ == "__main__":
-    main()
+    net = FNet(num_gpus=args.num_gpus, error=args.training_error)
+    net.train(y_folded=x_train, 
+              y_original=y_train,
+              batch_size=args.batch_size,
+              num_epochs=args.num_epochs)
