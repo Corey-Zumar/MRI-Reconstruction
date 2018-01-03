@@ -1,7 +1,10 @@
+import os
 import numpy as np
 import nibabel as nib
 
 from .constants import SLICE_WIDTH, SLICE_HEIGHT
+
+ANALYZE_DATA_EXTENSION_IMG = ".img"
 
 def center_crop(img_data):
     slice_width, slice_height, _ = img_data.shape
@@ -82,3 +85,19 @@ def load_image_data(analyze_img_path):
     img_data = normalize(img_data)
 
     return img_data
+
+def get_image_file_paths(dir_path):
+    img_paths = []
+    dir_walk = os.walk(dir_path)
+    for walk_item in dir_walk:
+        dir_name, _, file_subpaths = walk_item
+        relevant_subpaths = [
+            path for path in file_subpaths
+            if ANALYZE_DATA_EXTENSION_IMG in path
+        ]
+        relevant_paths = [
+            os.path.join(dir_name, path) for path in relevant_subpaths
+        ]
+        img_paths += relevant_paths
+
+    return img_paths

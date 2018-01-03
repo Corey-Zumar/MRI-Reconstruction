@@ -1,5 +1,4 @@
 import sys
-import os
 import argparse
 import numpy as np
 
@@ -14,10 +13,7 @@ from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
-from ..utils import subsample, load_image_data, multi_gpu_model
-
-# Data loading
-ANALYZE_DATA_EXTENSION_IMG = ".img"
+from ..utils import subsample, load_image_data, multi_gpu_model, get_image_file_paths
 
 # Training set construction
 NUM_SAMPLE_SLICES = 35
@@ -209,24 +205,6 @@ class FNet:
 
         self.architecture_exists = True
 
-
-def get_img_file_paths(dir_path):
-    img_paths = []
-    dir_walk = os.walk(dir_path)
-    for walk_item in dir_walk:
-        dir_name, _, file_subpaths = walk_item
-        relevant_subpaths = [
-            path for path in file_subpaths
-            if ANALYZE_DATA_EXTENSION_IMG in path
-        ]
-        relevant_paths = [
-            os.path.join(dir_name, path) for path in relevant_subpaths
-        ]
-        img_paths += relevant_paths
-
-    return img_paths
-
-
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
     original_img = load_image_data(analyze_img_path=raw_img_path)
     subsampled_img, _ = subsample(
@@ -246,6 +224,10 @@ def load_and_subsample(raw_img_path, substep, low_freq_percent):
 
         subsampled_img = subsampled_img[relevant_idxs]
         original_img = original_img[relevant_idxs]
+
+    from matplotlib import pyplot as plt
+    plt.imshow(np.squeeze(subsampled_img[0]))
+    plt.show()
 
     return subsampled_img, original_img
 
@@ -268,7 +250,7 @@ def load_and_subsample_images(disk_path, num_imgs, substep, low_freq_percent):
     A tuple of training data and ground truth images, each represented
     as numpy float arrays of dimension N x 256 x 256 x 1.
     """
-    file_paths = get_img_file_paths(disk_path)
+    file_paths = get_image_file_paths(disk_path)
 
     num_output_imgs = 0
 

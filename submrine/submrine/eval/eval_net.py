@@ -4,7 +4,7 @@ import argparse
 import keras
 import numpy as np
 
-from ..utils import subsample, correct_output, load_image_data, normalize
+from ..utils import subsample, correct_output, load_image_data, get_image_file_paths, normalize
 from matplotlib import pyplot as plt
 from skimage.measure import compare_ssim as ssim
 
@@ -44,24 +44,21 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
 
     fnet = load_net(net_path=net_path)
 
-    print(test_original.shape)
-    print(test_subsampled.shape)
-
     # Reshape input to shape (1, SLICE_WIDTH, SLICE_HEIGHT, 1)
-    fnet_input = np.expand_dims(test_subsampled[0], 0)
+    fnet_input = np.expand_dims(test_subsampled[70], 0)
     fnet_input = np.expand_dims(fnet_input, -1)
 
     fnet_output = fnet.predict(fnet_input)
     fnet_output = normalize(fnet_output)
     fnet_output = np.squeeze(fnet_output)
 
-    correction_subsampled_input = np.squeeze(test_subsampled_K[0])
+    correction_subsampled_input = np.squeeze(test_subsampled_K[70])
     corrected_output = correct_output(subsampled_img_K=correction_subsampled_input,
                                       network_output=fnet_output,
                                       substep=substep,
                                       low_freq_percent=low_freq_percent)
 
-    plt.subplot(121), plt.imshow(original_img, cmap='gray')
+    plt.subplot(121), plt.imshow(test_original[70], cmap='gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
     plt.subplot(122), plt.imshow(np.squeeze(corrected_output), cmap='gray')
     plt.title('Corrected Image'), plt.xticks([]), plt.yticks([])
@@ -81,6 +78,7 @@ def compute_loss(output, original, loss_type):
 
 def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     fnet = load_net(net_path)
+    img_paths = get_image_file_paths(data_path)
     losses = []
     aliased_losses = []
     for img_path in img_paths:
