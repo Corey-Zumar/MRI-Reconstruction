@@ -85,9 +85,14 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     aliased_losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
-        slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
-        slice_idxs_high = slice_idxs_low + NUM_EVALUATION_SLICES
-        slice_idxs = range(slice_idxs_low, slice_idxs_high)
+        num_slices = len(test_subsampled)
+        if num_slices > NUM_EVALUATION_SLICES:
+            slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
+            slice_idxs_high = slice_idxs_low + NUM_EVALUATION_SLICES
+            slice_idxs = range(slice_idxs_low, slice_idxs_high)
+        else:
+            slice_idxs = range(num_slices)
+
         for slice_idx in slice_idxs:
             fnet_input = np.expand_dims(test_subsampled[slice_idx], -1)
             fnet_output = fnet.predict(fnet_input)
