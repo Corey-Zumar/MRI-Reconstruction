@@ -5,7 +5,7 @@ import nibabel as nib
 import keras
 import numpy as np
 
-from utils import Subsample, Correction
+from utils import subsample, correct_output
 
 from matplotlib import pyplot as plt
 
@@ -54,7 +54,7 @@ def load_image(image_path, substep):
     original_data = np.moveaxis(original_data, -1, 0)
     original_data -= normalize_data(original_data)
 
-    subsampled_img, subsampled_K = Subsample.subsample(image_path, substep=substep, lowfreqPercent=LOW_FREQ_PERCENT)
+    subsampled_img, subsampled_K = subsample(image_path, substep=substep, low_freq_percent=LOW_FREQ_PERCENT)
 
     subsampled_data = np.moveaxis(subsampled_img, -1, 0)
     subsampled_K = np.moveaxis(subsampled_K, -1, 0)
@@ -80,10 +80,10 @@ def eval_diff_plot(net_path, img_path, substep):
 
     correction_subsampled_input = np.squeeze(test_subsampled_K[5])
 
-    corrected_output = Correction.Correction(correction_subsampled_input, 
-                                             fnet_output, 
-                                             substep=substep, 
-                                             lowfreqPercent=LOW_FREQ_PERCENT)
+    corrected_output = correct_output(correction_subsampled_input, 
+                                      fnet_output, 
+                                      substep=substep, 
+                                      low_freq_percent=LOW_FREQ_PERCENT)
 
     plt.subplot(121),plt.imshow(original_img, cmap = 'gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
@@ -125,7 +125,7 @@ def eval_loss(net_path, data_path, dataset_name, substep, size, loss_type):
             corrected_output = Correction.Correction(test_subsampled_k[slice_idx], 
                                                      fnet_output, 
                                                      substep=substep, 
-                                                     lowfreqPercent=LOW_FREQ_PERCENT)
+                                                     low_freq_percent=LOW_FREQ_PERCENT)
 
             ground_truth = normalize_data(test_original[slice_idx])
             loss = compute_loss(output=corrected_output, original=ground_truth, loss_type=loss_type)

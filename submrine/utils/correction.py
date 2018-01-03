@@ -5,12 +5,9 @@ Created on Sun Sep 24 22:21:25 2017
 @author: Alex
 """
 
-import cv2
 import numpy as np
-import nibabel as nib
-from matplotlib import pyplot as plt
 
-def Correction(subsampled_img_K, network_output, substep=4, low_freq_percent=0.04):
+def correct_output(subsampled_img_K, network_output, substep=4, low_freq_percent=0.04):
     """
     Corrects network output using the input subsampled image.
 
@@ -33,7 +30,7 @@ def Correction(subsampled_img_K, network_output, substep=4, low_freq_percent=0.0
     """
 
     # 2-dimensional fast Fourier transform
-    t_output = np.fft.fft2(network_output)#_slice)
+    t_output = np.fft.fft2(network_output)
 
     # shifts zero frequency to center
     tshift_output = np.fft.fftshift(t_output)

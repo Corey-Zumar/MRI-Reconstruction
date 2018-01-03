@@ -1,21 +1,34 @@
-import sys
-import os
+import numpy as np
+import nibabel as nib
 
-from nibabel.fileholders import FileHolder
-from nibabel.analyze import AnalyzeImage
+TARGET_SLICE_WIDTH = 256
+TARGET_SLICE_HEIGHT = 256
 
+def center_crop(img_data):
+    slice_width, slice_height, _ = img_data.shape()
+    if slice_width < TARGET_SLICE_WIDTH:
+    	raise Exception("The width of each MRI image slice must be at least {} pixels!".format(TARGET_SLICE_WIDTH))
+    elif slice_height < TARGET_HEIGHT:
+    	raise Exception("The height of each MRI image slice must be at least {} pixels!".format(TARGET_SLICE_HEIGHT))
 
-def load_image(analyze_img_path, analyze_header_path):
+    width_crop = (slice_width - TARGET_SLICE_WIDTH) // 2
+    height_crop = (slice_height - TARGET_SLICE_HEIGHT) // 2
+
+    return img_data[width_crop:-width_crop,height_crop:-height_crop,:]
+
+def load_image(analyze_img_path):
 	"""
 	Loads an MRI image from a stored representation
-	in Analyze 7.5 format
+	in Analyze 7.5 format.
+
+	Note: In order to load an image with path '<img_name>.img',
+	an Analyze header with name '<img_name>.hdr' must be present in the
+	same directory as the specified image
 
 	Parameters
 	------------
 	analyze_img_path : str
 		The path to the Analyze image path (with ".img" extension)
-	analyze_header_path : str
-		The path to the Analyze header path (with ".hdr" extension)
 
 	Returns
 	------------
@@ -23,31 +36,37 @@ def load_image(analyze_img_path, analyze_header_path):
 		An nibabel image object representing the Analyze 7.5
 		MRI image specified by the provided paths
 	"""
+	return nib.load(analyze_img_path)
 
-	img_holder = FileHolder(analyze_img_path)
-	header_holder = FileHolder(analyze_header_path)
 
-	data_map = {'image' : img_holder, 'header' : header_holder}
-	return AnalyzeImage.from_file_map(data_map, mmap=False)
-
-def load_image_data(analyze_img_path, analyze_header_path):
+def load_image_data(analyze_img_path):
 	"""
-	Loads an MRI image from a stored representation
-	in Analyze 7.5 format
+	Loads, center-crops, and scales an MRI image from a stored representation
+	in Analyze 7.5 format.
+
+	Note: In order to load an image with path '<img_name>.img',
+	an Analyze header with name '<img_name>.hdr' must be present in the
+	same directory as the specified image
 
 	Parameters
 	------------
 	analyze_img_path : str
 		The path to the Analyze image path (with ".img" extension)
-	analyze_header_path : str
-		The path to the Analyze header path (with ".hdr" extension)
 
 	Returns
 	------------
 	np.ndarray
-		A numpy array representing the image's underlying data.
-		This is a result of a call to `nibabel.analyze.AnalyzeImage.get_data()`
+		A numpy representation of the cropped and scaled
+		image data with shape (TARGET_WIDTH, TARGET_HEIGHT, <number_of_slices>).
+		The datatype of this array is `np.float32`
 	"""
+	img_data = load_image(analyze_img_path).get_data()
+	img_data = np.squeeze(img_data).astype(np.float32)
+	img_data = center_crop(img_data)
+    img_data -= img_data.min()
+    img_data = img_data / img_data.max()
+    img_data = img_data * 255.0
 
-	return load_image(analyze_img_path, analyze_header_path).get_data()
+    return img_data
+
 

@@ -1,7 +1,6 @@
 import sys
 import os
 import argparse
-import nibabel as nib
 import numpy as np
 
 from datetime import datetime
@@ -15,10 +14,7 @@ from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
 
-from utils import Subsample
-from utils.keras_parallel import multi_gpu_model
-
-from matplotlib import pyplot as plt
+from utils import subsampling, load_image_data, multi_gpu_model
 
 # Data loading
 ANALYZE_DATA_EXTENSION_IMG = ".img"
@@ -148,15 +144,6 @@ class FNet:
 
 		self.architecture_exists = True
 
-def load_image(image_path):
-	img = nib.load(image_path)
-	data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
-	data = data[63:319,63:319,:]
-	data -= data.min()
-	data = data / data.max()
-	data = data * 255.0
-	return data
-
 def get_img_file_paths(dir_path):
 	img_paths = []
 	dir_walk = os.walk(dir_path)
@@ -168,33 +155,35 @@ def get_img_file_paths(dir_path):
 
 	return img_paths
 
-def load_and_subsample(raw_img_path):
-	subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
-	subsampled_img = np.array(np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0), dtype=np.float32)
-	original_img = load_image(raw_img_path)
+def load_and_subsample(raw_img_path, substep, low_freq_percent):
+	original_img = load_image_data(analyze_image_path=raw_img_path)
+	subsampled_img = subsample(analyze_image_data=original_img, substep=substep, low_freq_percent=low_freq_percent)
+
 	original_img = np.moveaxis(original_img, -1, 0)
-	img_len = len(original_img)
-	original_img = original_img.reshape(img_len, 256, 256, 1)
-	if img_len > NUM_SAMPLE_SLICES:
-		relevant_idx_low = (img_len - NUM_SAMPLE_SLICES) / 2
+	original_img = np.expand_dims(original_img, -1)
+	subsampled_img = np.moveaxis(np.expand_dims(subsampled_img, 3), -2, 0)
+
+	if len(original_img) > NUM_SAMPLE_SLICES:
+		relevant_idx_low = (img_len - NUM_SAMPLE_SLICES) // 2
 		relevant_idx_high = relevant_idx_low + NUM_SAMPLE_SLICES
 
 		subsampled_img = subsampled_img[relevant_idxs]
-		original_img = subsampled_img[relevant_idxs]
+		original_img = original_img[relevant_idxs]
 
 	return subsampled_img, original_img
 
-
-def load_and_subsample_images(disk_path, num_imgs):
+def load_and_subsample_images(disk_path, num_imgs, substep, low_freq_percent):
 	"""
 	Parameters
 	------------
 	disk_path : str
-		A path to an OASIS disc directory
-	ds_name : str
-		The name of the dataset
+		A path to a disk (directory) of MRI images in Analyze 7.5 format
 	num_imgs : int
 		The number of images to load
+	substep : int
+		The substep to use when each image
+	low_freq_percent : float
+		The percentage of low frequency data to retain when subsampling training images
 
 	Returns
 	------------
@@ -208,15 +197,12 @@ def load_and_subsample_images(disk_path, num_imgs):
 	x_train = None
 	y_train = None
 
-	# The indexes of the most relevant slices for a given image/
-	# These slices contain the most structurally interesting
-	# imagery
-	relevant_idxs = range(47,82)
-
 	for i in range(len(file_paths)):
 		raw_img_path = file_paths[i]
 
-		subsampled_img, original_img = load_and_subsample(raw_img_path)
+		subsampled_img, original_img = load_and_subsample(raw_img_path=raw_img_path, 
+														  substep=substep, 
+														  low_freq_percent=low_freq_percent)
 
 		if i == 0:
 			x_train = subsampled_img
@@ -240,16 +226,19 @@ def main():
     parser.add_argument('-s', '--substep', type=int, default=4, help="The substep to use when subsampling training images")
     parser.add_argument('-n', '--num_epochs', type=int, default=2000, help='The number of training epochs')
     parser.add_argument('-b', '--batch_size', type=int, default=256, help='The training batch size. This will be sharded across all available GPUs')
-    parser.add_argument('-g', '--num_gpus', type=int, default=0, help=''
+    parser.add_argument('-g', '--num_gpus', type=int, default=0, help='The number of GPUs on which to train the model')
 
     args = parser.parse_args()
 
-    x_train, y_train = load_and_subsample_images(args.disk_path, args.dataset_name, args.training_size)
+    x_train, y_train = load_and_subsample_images(disk_path=args.disk_path, 
+    											 num_imgs=args.training_size,
+    											 substep=args.substep,
+    											 low_freq_percent=args.lf_percent)
 
     if len(x_train) > args.training_size:
-    	# Select the most relevant slices from each patient
+    	# Select the most relevant slices from each image
     	# until the aggregate number of slices is equivalent to the
-    	# specified training size
+    	# specified training dataset size
     	training_idxs = range(args.training_size)
     	x_train = x_train[training_idxs]
     	y_train = y_train[training_idxs]
