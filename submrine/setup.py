@@ -22,5 +22,6 @@ setup(
         'scikit-image>=0.13.1'
     ],
     entry_points = {
-    "console_scripts": ['submrine-train = submrine.train.train_net:main']
+    "console_scripts": ['submrine-train = submrine.train.train_net:main',
+                        'submrine-eval = submrine.eval.eval_net:main']
     })

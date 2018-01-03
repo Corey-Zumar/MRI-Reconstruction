@@ -15,6 +15,9 @@ ANALYZE_DATA_EXTENSION_IMG = ".img"
 LOSS_TYPE_MSE = "mse"
 LOSS_TYPE_SSIM = "ssim"
 
+# Loss computation
+NUM_EVALUATION_SLICES = 35
+
 def load_image(raw_img_path, substep, low_freq_percent):
     original_img = load_image_data(analyze_img_path=raw_img_path)
     subsampled_img, subsampled_K = subsample(analyze_img_data=original_img, 
@@ -44,10 +47,13 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
     print(test_original.shape)
     print(test_subsampled.shape)
 
-    fnet_input = test_subsampled[0].reshape((1, 256, 256, 1))
+    # Reshape input to shape (1, SLICE_WIDTH, SLICE_HEIGHT, 1)
+    fnet_input = np.expand_dims(test_subsampled[0], 0)
+    fnet_input = np.expand_dims(fnet_input, -1)
+
     fnet_output = fnet.predict(fnet_input)
     fnet_output = normalize(fnet_output)
-    fnet_output = fnet_output.reshape(256, 256)
+    fnet_output = np.squeeze(fnet_output)
 
     correction_subsampled_input = np.squeeze(test_subsampled_K[0])
     corrected_output = correct_output(subsampled_img_K=correction_subsampled_input,
@@ -79,7 +85,9 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     aliased_losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
-
+        slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
+        slice_idxs_high = slice_idxs_low + NUM_EVALUATION_SLICES
+        slice_idxs = range(slice_idxs_low, slice_idxs_high)
         for slice_idx in slice_idxs:
             fnet_input = np.expand_dims(test_subsampled[slice_idx], -1)
             fnet_output = fnet.predict(fnet_input)
@@ -129,13 +137,7 @@ def main():
         '-i',
         '--img_path',
         type=str,
-        help="The path to an OASIS MRI image to evaluate and diff-plot")
-    parser.add_argument(
-        '-s',
-        '--substep',
-        type=int,
-        default=4,
-        help="The substep used for subsampling (4 in the paper)")
+        help="The path to a full-resolution MR image to subsample, reconstruct, and diff-plot")
     parser.add_argument(
         '-n', '--net_path', type=str, help="The path to a trained FNet")
     parser.add_argument(
@@ -143,24 +145,35 @@ def main():
         '--data_path',
         type=str,
         help=
-        "The path to a test set of Analyze images to evaluate for loss computation"
+        "The path to a test set of full-resolution MR images to evaluate for loss computation"
+    )
+    parser.add_argument(
+        '-s',
+        '--substep',
+        type=int,
+        default=4,
+        help="The substep used for subsampling (4 in the paper)")
+    parser.add_argument(
+        '-f',
+        '--lf_percent',
+        type=float,
+        default=.04,
+        help=
+        "The percentage of low frequency data to retain when subsampling training images"
     )
     parser.add_argument(
         '-t',
         '--test_size',
         type=str,
+        default=400,
         help="The size of the test set (used if --data_path is specified)")
     parser.add_argument(
         '-l',
         '--loss_type',
         type=str,
-        default="mse",
+        default='mse',
         help="The type of evaluation loss. One of: 'mse', 'ssim'")
-    parser.add_argument(
-        '-dn',
-        '--dataset_name',
-        type=str,
-        help="The name of the training dataset - either 'oasis' or 'prostate'")
+
     args = parser.parse_args()
 
     if not args.substep:
@@ -169,12 +182,20 @@ def main():
         raise Exception("--net_path must be specified!")
 
     if args.img_path:
-        eval_diff_plot(args.net_path, args.img_path, args.substep)
+        eval_diff_plot(net_path=args.net_path,
+                       img_path=args.img_path, 
+                       substep=args.substep,
+                       low_freq_percent=args.lf_percent)
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
-        eval_loss(args.net_path, args.data_path, args.dataset_name,
-                  args.substep, int(args.test_size), args.loss_type)
+
+        eval_loss(net_path=args.net_path,
+                  data_path=args.data_path,
+                  size=int(args.test_size),
+                  loss_type=args.loss_type,
+                  substep=args.substep,
+                  low_freq_percent=args.lf_percent)
     else:
         raise Exception(
             "Either '--img_path' or '--data_path' must be specified!")
