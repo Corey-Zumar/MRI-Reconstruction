@@ -44,26 +44,20 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
     print(test_original.shape)
     print(test_subsampled.shape)
 
-    original_img = normalize(test_original[5][63:319, 63:319].reshape(
-        256, 256))
-
-    fnet_input = test_subsampled[5].reshape((1, 256, 256, 1))
+    fnet_input = test_subsampled[0].reshape((1, 256, 256, 1))
     fnet_output = fnet.predict(fnet_input)
     fnet_output = normalize(fnet_output)
     fnet_output = fnet_output.reshape(256, 256)
 
-    correction_subsampled_input = np.squeeze(test_subsampled_K[5])
-
-    corrected_output = correct_output(
-        correction_subsampled_input,
-        fnet_output,
-        substep=substep,
-        low_freq_percent=LOW_FREQ_PERCENT)
+    correction_subsampled_input = np.squeeze(test_subsampled_K[0])
+    corrected_output = correct_output(subsampled_img_K=correction_subsampled_input,
+                                      network_output=fnet_output,
+                                      substep=substep,
+                                      low_freq_percent=low_freq_percent)
 
     plt.subplot(121), plt.imshow(original_img, cmap='gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-    plt.subplot(122), plt.imshow(
-        corrected_output.reshape(256, 256), cmap='gray')
+    plt.subplot(122), plt.imshow(np.squeeze(corrected_output), cmap='gray')
     plt.title('Corrected Image'), plt.xticks([]), plt.yticks([])
     plt.show()
 
@@ -85,16 +79,16 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     aliased_losses = []
     for img_path in img_paths:
         test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
+
         for slice_idx in slice_idxs:
             fnet_input = np.expand_dims(test_subsampled[slice_idx], -1)
             fnet_output = fnet.predict(fnet_input)
             fnet_output = normalize_data(fnet_output)
             fnet_output = np.squeeze(fnet_output)
-            corrected_output = Correction.Correction(
-                test_subsampled_k[slice_idx],
-                fnet_output,
-                substep=substep,
-                low_freq_percent=LOW_FREQ_PERCENT)
+            corrected_output = correct_output(subsampled_img_K=test_subsampled_k[slice_idx],
+                                              network_output=fnet_output,
+                                              substep=substep,
+                                              low_freq_percent=LOW_FREQ_PERCENT)
 
             ground_truth = normalize_data(test_original[slice_idx])
             loss = compute_loss(

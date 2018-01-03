@@ -75,4 +75,5 @@ def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
         imgarr[:, :, slice_idx] = reconsubshift
 
         subsampled_img_K[:, :, slice_idx] = subshift
+        
     return imgarr, subsampled_img_K

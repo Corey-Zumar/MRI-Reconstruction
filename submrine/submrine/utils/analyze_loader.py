@@ -28,6 +28,7 @@ def normalize(img_data):
     img_data -= img_data.min()
     img_data = img_data / img_data.max()
     img_data = img_data * 255.0
+    return img_data
 
 def load_image(analyze_img_path):
     """
