@@ -33,7 +33,7 @@ def load_image(raw_img_path, substep, low_freq_percent):
 def load_net(net_path):
     return keras.models.load_model(net_path)
 
-def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k):
+def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_freq_percent):
     # Reshape input to shape (1, SLICE_WIDTH, SLICE_HEIGHT, 1)
     fnet_input = np.expand_dims(subsampled_slice, 0)
     fnet_input = np.expand_dims(fnet_input, -1)
@@ -64,7 +64,9 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
 
     reconstructed_slice = reconstruct_slice(fnet=fnet,
                                             subsampled_slice=test_subsampled[70],
-                                            subsampled_slice_k=test_subsampled_K[70])
+                                            subsampled_slice_k=test_subsampled_K[70],
+                                            substep=substep,
+                                            low_freq_percent=low_freq_percent)
 
     plt.subplot(121), plt.imshow(test_original[70], cmap='gray')
     plt.title('Original Image'), plt.xticks([]), plt.yticks([])
@@ -108,7 +110,9 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
         for slice_idx in slice_idxs:
             reconstructed_slice = reconstruct_slice(fnet=fnet,
                                                     subsampled_slice=test_subsampled[slice_idx],
-                                                    subsampled_slice_k=test_subsampled_k[slice_idx])
+                                                    subsampled_slice_k=test_subsampled_k[slice_idx],
+                                                    substep=substep,
+                                                    low_freq_percent=low_freq_percent)
 
             loss = compute_loss(
                 output=reconstructed_slice,
