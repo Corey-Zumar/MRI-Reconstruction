@@ -1,6 +1,0 @@
-Trained on 1400 image slices of size 256 x 256 x 1 for 2000 epochs. Batch size 324. Lowest-loss networks produced:
-
-1. Epoch 1990 ~ fnet-1989.hdf5 : Total MSE of 7096.7113
-2. Epoch 1998 ~ fnet-1997.hdf5 : Total MSE of 7155.4468
-
-Note: Validation set was of size 250 
