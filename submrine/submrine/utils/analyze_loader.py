@@ -50,6 +50,7 @@ def load_image(analyze_img_path):
         An nibabel image object representing the Analyze 7.5
         MRI image specified by the provided paths
     """
+    print("Loading image with path: {}".format(analyze_img_path))
     return nib.load(analyze_img_path)
 
 
