@@ -82,7 +82,13 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     losses = []
     aliased_losses = []
     for img_path in img_paths:
-        test_subsampled, test_subsampled_k, test_original = load_image(img_path, substep)
+        [
+            test_subsampled, 
+            test_subsampled_K, 
+            test_original
+        ] = load_image(raw_img_path=img_path, 
+                       substep=substep, 
+                       low_freq_percent=low_freq_percent)
         num_slices = len(test_subsampled)
         if num_slices > NUM_EVALUATION_SLICES:
             slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
