@@ -7,7 +7,11 @@ Created on Sun Sep 24 22:21:25 2017
 
 import numpy as np
 
-def correct_output(subsampled_img_K, network_output, substep=4, low_freq_percent=0.04):
+
+def correct_output(subsampled_img_K,
+                   network_output,
+                   substep=4,
+                   low_freq_percent=0.04):
     """
     Corrects network output using the input subsampled image.
 
@@ -36,17 +40,20 @@ def correct_output(subsampled_img_K, network_output, substep=4, low_freq_percent
     tshift_output = np.fft.fftshift(t_output)
     tshift_input = subsampled_img_K
 
-    mod_low_freq_percent = 1.0 / float(substep) * low_freq_percent + low_freq_percent
+    mod_low_freq_percent = 1.0 / float(
+        substep) * low_freq_percent + low_freq_percent
 
-    start = len(tshift_output)/2-int(mod_low_freq_percent*float(len(tshift_output)))
-    end = len(tshift_output)/2+int(mod_low_freq_percent*float(len(tshift_output)))
+    start = len(tshift_output) / 2 - int(
+        mod_low_freq_percent * float(len(tshift_output)))
+    end = len(tshift_output) / 2 + int(
+        mod_low_freq_percent * float(len(tshift_output)))
 
     for i in range(0, start):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
-    for i in range (start, end):
+    for i in range(start, end):
         tshift_output[i] = tshift_input[i]
-    for i in range (end, len(tshift_output)):
+    for i in range(end, len(tshift_output)):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
 

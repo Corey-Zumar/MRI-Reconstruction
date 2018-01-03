@@ -9,6 +9,7 @@ from keras.models import Model
 
 import tensorflow as tf
 
+
 def _get_available_devices():
     from tensorflow.python.client import device_lib
     local_device_protos = device_lib.list_local_devices()
@@ -18,6 +19,7 @@ def _get_available_devices():
 def _normalize_device_name(name):
     name = name.lower().replace('device:', '')
     return name
+
 
 def multi_gpu_model(model, gpus):
     """Replicates a model on different GPUs.
@@ -82,15 +84,16 @@ def multi_gpu_model(model, gpus):
 
     target_devices = ['/cpu:0'] + ['/gpu:%d' % i for i in range(gpus)]
     available_devices = _get_available_devices()
-    available_devices = [_normalize_device_name(name) for name in available_devices]
+    available_devices = [
+        _normalize_device_name(name) for name in available_devices
+    ]
     for device in target_devices:
         if device not in available_devices:
             raise ValueError(
                 'To call `multi_gpu_model` with `gpus=%d`, '
                 'we expect the following devices to be available: %s. '
                 'However this machine only has: %s. '
-                'Try reducing `gpus`.' % (gpus,
-                                          target_devices,
+                'Try reducing `gpus`.' % (gpus, target_devices,
                                           available_devices))
 
     def get_slice(data, i, parts):
@@ -120,10 +123,13 @@ def multi_gpu_model(model, gpus):
                 # Retrieve a slice of the input.
                 for x in model.inputs:
                     input_shape = tuple(x.get_shape().as_list())[1:]
-                    slice_i = Lambda(get_slice,
-                                     output_shape=input_shape,
-                                     arguments={'i': i,
-                                                'parts': gpus})(x)
+                    slice_i = Lambda(
+                        get_slice,
+                        output_shape=input_shape,
+                        arguments={
+                            'i': i,
+                            'parts': gpus
+                        })(x)
                     inputs.append(slice_i)
 
                 # Apply model on slice
@@ -140,8 +146,7 @@ def multi_gpu_model(model, gpus):
     with tf.device('/cpu:0'):
         merged = []
         for outputs in all_outputs:
-            merged.append(concatenate(outputs,
-                                      axis=0))
+            merged.append(concatenate(outputs, axis=0))
         new_model = Model(model.inputs, merged)
 
         # Fix for checkpointing from
@@ -149,8 +154,8 @@ def multi_gpu_model(model, gpus):
         funcType = type(model.save)
 
         # monkeypatch the save to save just the underlying model
-        def new_save(self_,filepath, overwrite=True):
+        def new_save(self_, filepath, overwrite=True):
             model.save(filepath, overwrite)
-            
-        new_model.save=funcType(new_save, new_model)
+
+        new_model.save = funcType(new_save, new_model)
         return new_model

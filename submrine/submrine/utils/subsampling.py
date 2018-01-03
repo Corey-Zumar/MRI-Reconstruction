@@ -7,6 +7,7 @@ Created on Sun Sep 24 22:21:25 2017
 
 import numpy as np
 
+
 def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
     """
     Subsamples an MRI image in Analyze 7.5 format
@@ -33,14 +34,14 @@ def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
     """
 
     data = np.copy(analyze_img_data)
-  
+
     subsampled_img_K = np.ones_like(data, dtype='complex')
     imgarr = np.ones_like(data)
 
     np.set_printoptions(threshold='nan')
 
     for slice_idx in range(data.shape[2]):
-        data_slice = np.squeeze(data[:,:,slice_idx])
+        data_slice = np.squeeze(data[:, :, slice_idx])
 
         # 2-dimensional fast Fourier transform
         t = np.fft.fft2(data_slice)
@@ -53,22 +54,25 @@ def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
 
         #Subsampler,
         #accounts for the double-counted lines
-        mod_low_freq_percent = 1.0 / float(substep) * low_freq_percent + low_freq_percent
+        mod_low_freq_percent = 1.0 / float(
+            substep) * low_freq_percent + low_freq_percent
 
-        start = len(tshift)/2-int(mod_low_freq_percent*float(len(tshift)))
-        end = len(tshift)/2+int(mod_low_freq_percent*float(len(tshift)))
+        start = len(tshift) / 2 - int(
+            mod_low_freq_percent * float(len(tshift)))
+        end = len(tshift) / 2 + int(mod_low_freq_percent * float(len(tshift)))
 
         for i in range(0, start):
             if i % substep == 0:
                 subshift[i] = tshift[i]
-        for i in range (start, end):
+        for i in range(start, end):
             subshift[i] = tshift[i]
-        for i in range (end, len(tshift)):
+        for i in range(end, len(tshift)):
             if i % substep == 0:
                 subshift[i] = tshift[i]
 
-        reconsubshift = abs(np.fft.ifft2(np.fft.ifftshift(subshift)).real).astype(float)
-        imgarr[:,:,slice_idx] = reconsubshift
+        reconsubshift = abs(np.fft.ifft2(
+            np.fft.ifftshift(subshift)).real).astype(float)
+        imgarr[:, :, slice_idx] = reconsubshift
 
-        subsampled_img_K[:,:,slice_idx] = subshift
+        subsampled_img_K[:, :, slice_idx] = subshift
     return imgarr, subsampled_img_K
