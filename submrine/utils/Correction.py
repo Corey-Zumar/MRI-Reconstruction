@@ -10,7 +10,7 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def Correction(subsampled_img_K, network_output, substep=4, lowfreqPercent=0.04):
+def Correction(subsampled_img_K, network_output, substep=4, low_freq_percent=0.04):
     """
     Corrects network output using the input subsampled image.
 
@@ -22,7 +22,7 @@ def Correction(subsampled_img_K, network_output, substep=4, lowfreqPercent=0.04)
         Output from the CNN
     substep: int
         every substep-th line will be included (4 in paper)
-    lowfrewPercent :  float
+    low_freq_percent :  float
         percent of low frequencies to add into model (0.04 in paper)
 
     Returns
@@ -32,22 +32,18 @@ def Correction(subsampled_img_K, network_output, substep=4, lowfreqPercent=0.04)
     interpretable images.
     """
 
-        # 2-dimensional fast Fourier transform
+    # 2-dimensional fast Fourier transform
     t_output = np.fft.fft2(network_output)#_slice)
 
-        # shifts 0 frequency to center
+    # shifts zero frequency to center
     tshift_output = np.fft.fftshift(t_output)
     tshift_input = subsampled_img_K
-        #Subsampler,
-        #accounts for the double-counted lines
-    lowfreqModifiedPercent = 1.0/float(substep)*lowfreqPercent+lowfreqPercent
 
-    start = len(tshift_output)/2-int(lowfreqModifiedPercent*float(len(tshift_output)))
-    end = len(tshift_output)/2+int(lowfreqModifiedPercent*float(len(tshift_output)))
-    #print("starting")
-    #print([len(tshift_output), start, end])
-    #print(tshift_input[0:10,0:20])
-    #print(tshift_output[0:10,0:20])
+    mod_low_freq_percent = 1.0 / float(substep) * low_freq_percent + low_freq_percent
+
+    start = len(tshift_output)/2-int(mod_low_freq_percent*float(len(tshift_output)))
+    end = len(tshift_output)/2+int(mod_low_freq_percent*float(len(tshift_output)))
+
     for i in range(0, start):
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
@@ -57,12 +53,9 @@ def Correction(subsampled_img_K, network_output, substep=4, lowfreqPercent=0.04)
         if i % substep == 0:
             tshift_output[i] = tshift_input[i]
 
-    #print(tshift_output[0:10,0:20])
-        # Visualize result of subsample #
     corr = abs(np.fft.ifft2(np.fft.ifftshift(tshift_output)))
     corr -= corr.min()
     corr = corr / corr.max()
     corr = corr * 255.0
     corr = corr.astype(int)
     return corr
-    #return 20*np.log(abs(tshift_output))

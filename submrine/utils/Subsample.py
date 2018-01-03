@@ -10,7 +10,20 @@ import numpy as np
 import nibabel as nib
 from matplotlib import pyplot as plt
 
-def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
+TARGET_SLICE_WIDTH = 256
+TARGET_SLICE_HEIGHT = 256
+
+def center_crop(img_data):
+    slice_width, slice_height, _ = img_data.shape()
+    if (slice_width < TARGET_SLICE_WIDTH) or (slice_height < TARGET_SLICE_HEIGHT):
+        raise Exception("The width and height of each MRI image slice must be at least 256 pixels!")
+
+    width_crop = (slice_width - TARGET_SLICE_WIDTH) // 2
+    height_crop = (slice_height - TARGET_SLICE_HEIGHT) // 2
+
+    return img_data[width_crop:-width_crop,height_crop:-height_crop,:]
+
+def subsample(analyze_img_path, substep=4, low_freq_percent=0.04):
     """
     Subsamples an MRI image in Analyze 7.5 format
     Note: must have .hdr file
@@ -21,7 +34,7 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
         The path to the Analyze image path (with ".img" extension)
     substep : int
         every substep-th line will be included (4 in paper)
-    lowfrewPercent :  float
+    low_freq_percent :  float
         percent of low frequencies to add into model (0.04 in paper)
 
     Returns
@@ -34,10 +47,10 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     An numpy image object representing a list of subsampled images in k-space.
     These are complex numbers
     """
-    #Load image
+
     img = nib.load(analyze_img_path)
-    hdr = img.get_header()
     data = img.get_data()
+    data = center_crop(data)
     data = np.array(np.squeeze(img.get_data()), dtype=np.float32)
     data = data[63:319,63:319,:]
     data -= data.min()
@@ -45,21 +58,17 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
     data = data * 255.0
   
     subsampled_img_K = np.ones_like(data, dtype='complex')
-    #data = data.astype(int)
     imgarr = np.ones_like(data)
 
     np.set_printoptions(threshold='nan')
 
-    #iterate over each slice
-
-    for slice in range(data.shape[2]):
-        data_slice = np.squeeze(data[:,:,slice])
-
+    for slice_idx in range(data.shape[2]):
+        data_slice = np.squeeze(data[:,:,slice_idx])
 
         # 2-dimensional fast Fourier transform
         t = np.fft.fft2(data_slice)
 
-        # shifts 0 frequency to center
+        # shift zero frequency to center
         tshift = np.fft.fftshift(t)
 
         # initialize a subsampled array with complex numbers
@@ -67,10 +76,10 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
 
         #Subsampler,
         #accounts for the double-counted lines
-        lowfreqModifiedPercent = 1.0/float(substep)*lowfreqPercent+lowfreqPercent
+        mod_low_freq_percent = 1.0 / float(substep) * low_freq_percent + low_freq_percent
 
-        start = len(tshift)/2-int(lowfreqModifiedPercent*float(len(tshift)))
-        end = len(tshift)/2+int(lowfreqModifiedPercent*float(len(tshift)))
+        start = len(tshift)/2-int(mod_low_freq_percent*float(len(tshift)))
+        end = len(tshift)/2+int(mod_low_freq_percent*float(len(tshift)))
 
         for i in range(0, start):
             if i % substep == 0:
@@ -81,21 +90,8 @@ def subsample(analyze_img_path, substep=4, lowfreqPercent=0.04):
             if i % substep == 0:
                 subshift[i] = tshift[i]
 
-        # Visualize result of subsample #
-        #print(slice)
-        #print(type(imgarr))
         reconsubshift = abs(np.fft.ifft2(np.fft.ifftshift(subshift)).real).astype(float)
-        #reconsubshift -= reconsubshift.min()
-        #reconsubshift /= reconsubshift.max()
-        #reconsubshift *= 255.0
-        imgarr[:,:,slice] = reconsubshift
+        imgarr[:,:,slice_idx] = reconsubshift
 
-        subsampled_img_K[:,:,slice] = subshift
-    #    if slice == 70:
-    #        plt.subplot(121),plt.imshow(20*np.log(np.abs(subshift)), cmap='gray')
-    #        plt.title('A        B            C          D'), plt.xticks([]), plt.yticks([])
-    #        plt.subplot(122),plt.imshow(20*np.log(np.abs(tshift)), cmap = 'gray')
-    #        plt.title('Subsampled'), plt.xticks([]), plt.yticks([])
-    #        plt.show()
-    #print(subsampled_img_K[:,:,70])
+        subsampled_img_K[:,:,slice_idx] = subshift
     return imgarr, subsampled_img_K

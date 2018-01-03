@@ -17,32 +17,23 @@ from keras.callbacks import ModelCheckpoint
 
 from utils import Subsample
 from utils.keras_parallel import multi_gpu_model
-from utils.layers import Unpool2D
 
 from matplotlib import pyplot as plt
+
+# Data loading
+ANALYZE_DATA_EXTENSION_IMG = ".img"
+
+# Training set construction
+NUM_SAMPLE_SLICES = 35
 
 # Neural Network Parameters
 RMS_WEIGHT_DECAY = .9
 LEARNING_RATE = .001
-BATCH_SIZE = 256
-NUM_EPOCHS = 2000
+FNET_ERROR_MSE = "mse"
+FNET_ERROR_MAE = "mae"
 
 # Logging
 CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
-
-# Data paths
-OASIS_DATA_DIRECTORY_PREFIX = "OAS"
-OASIS_DATA_RAW_RELATIVE_PATH = "RAW"
-
-ANALYZE_DATA_EXTENSION_IMG = ".img"
-
-DATASET_NAME_OASIS = "oasis"
-DATASET_NAME_PROSTATE = "prostate"
-
-NUM_SAMPLE_SLICES = 35
-
-FNET_ERROR_MSE = "squared"
-FNET_ERROR_MAE = "absolute"
 
 class FNet:
 
@@ -50,7 +41,7 @@ class FNet:
 		self.architecture_exists = False
 		self.error = error
 
-	def train(self, y_folded, y_original):
+	def train(self, y_folded, y_original, batch_size, num_epochs):
 		"""
 		Trains the specialized U-net for the MRI reconstruction task
 
@@ -61,6 +52,10 @@ class FNet:
 		y_original : [np.ndarray]
 			The ground truth set of images, preprocessed by applying the inverse
 			f_{cor} function and removing undersampled k-space data
+		batch_size : int
+			The training batch size
+		num_epochs : int
+			The number of training epochs
 		"""
 
 		if not self.architecture_exists:
@@ -70,8 +65,8 @@ class FNet:
 
 		self.model.fit(y_folded, 
 					   y_original, 
-					   batch_size=BATCH_SIZE, 
-					   nb_epoch=NUM_EPOCHS, 
+					   batch_size=batch_size, 
+					   nb_epoch=num_epochs, 
 					   shuffle=True, 
 					   validation_split=.2,
 					   verbose=1,
@@ -92,7 +87,7 @@ class FNet:
 		millis_since_epoch = (curr_time - epoch).total_seconds() * 1000
 		return int(millis_since_epoch)
 
-	def _create_architecture(self):
+	def _create_architecture(self, num_gpus):
 		inputs = Input(shape=(256,256,1))
 
 		weights_initializer = RandomNormal(mean=0.0, stddev=.01, seed=self._get_initializer_seed())
@@ -123,10 +118,6 @@ class FNet:
 
 		unpool_1 = concatenate([UpSampling2D(size=(2,2))(conv2d_6), conv2d_4], axis=3)
 
-		# deconv2d_1 = concatenate(
-		# 	[Conv2DTranspose(filters=128, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-		# 		kernel_initializer=weights_initializer)(conv2d_6), conv2d_4], axis=3)
-
 		conv2d_7 = Conv2D(filters=128, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(unpool_1)
 
@@ -134,10 +125,6 @@ class FNet:
 			activation='relu', kernel_initializer=weights_initializer)(conv2d_7)
 
 		unpool_2 = concatenate([UpSampling2D(size=(2,2))(conv2d_8), conv2d_2], axis=3)
-
-		# deconv2d_2 = concatenate(
-		# 	[Conv2DTranspose(filters=64, kernel_size=(2, 2), strides=(2, 2), padding='same', 
-		# 		kernel_initializer=weights_initializer)(conv2d_8), conv2d_2], axis=3)
 
 		conv2d_9 = Conv2D(filters=64, kernel_size=(3,3), strides=(1,1), padding='same', 
 			activation='relu', kernel_initializer=weights_initializer)(unpool_2)
@@ -153,8 +140,9 @@ class FNet:
 
 		optimizer = RMSprop(lr=LEARNING_RATE, rho=RMS_WEIGHT_DECAY, epsilon=1e-08, decay=0)
 
-
-		self.model = multi_gpu_model(Model(inputs=[inputs], outputs=[outputs]), gpus=8)
+		self.model = Model(inputs=[inputs], outputs=[outputs])
+		if num_gpus >= 2:
+			self.model = multi_gpu_model(self.model, gpus=num_gpus)	
 
 		self.model.compile(optimizer=optimizer, loss=self._parse_error(), metrics=[mean_squared_error])
 
@@ -169,19 +157,16 @@ def load_image(image_path):
 	data = data * 255.0
 	return data
 
-def get_oasis_file_paths(disk_path):
-	oasis_subdirs = [subdir for subdir in os.listdir(disk_path) if OASIS_DATA_DIRECTORY_PREFIX in subdir]
-	oasis_raw_paths = []
-	for subdir in oasis_subdirs:
-		raws_subdir = os.path.join(disk_path, subdir, OASIS_DATA_RAW_RELATIVE_PATH)
-		for raw_fname in [fname for fname in os.listdir(raws_subdir) if ANALYZE_DATA_EXTENSION_IMG in fname]:
-			oasis_raw_paths.append(os.path.join(raws_subdir, raw_fname))
+def get_img_file_paths(dir_path):
+	img_paths = []
+	dir_walk = os.walk(dir_path)
+	for walk_item in dir_walk:
+		dir_name, _, file_subpaths = walk_item
+		relevant_subpaths = [path for path in file_subpaths if ANALYZE_DATA_EXTENSION_IMG in path]
+		relevant_paths = [os.path.join(dir_name, path) for path in relevant_subpaths]
+		img_paths += relevant_paths
 
-	return oasis_raw_paths
-
-def get_prostate_file_paths(disk_path):
-	ps_subpaths = [path for path in os.listdir(disk_path) if ANALYZE_DATA_EXTENSION_IMG in path]
-	return [os.path.join(disk_path, subpath) for subpath in ps_subpaths]
+	return img_paths
 
 def load_and_subsample(raw_img_path):
 	subsampled_img, _ = Subsample.subsample(raw_img_path, substep=4, lowfreqPercent=.04)
@@ -200,7 +185,7 @@ def load_and_subsample(raw_img_path):
 	return subsampled_img, original_img
 
 
-def load_and_subsample_images(disk_path, ds_name, num_imgs):
+def load_and_subsample_images(disk_path, num_imgs):
 	"""
 	Parameters
 	------------
@@ -216,12 +201,7 @@ def load_and_subsample_images(disk_path, ds_name, num_imgs):
 	A tuple of training data and ground truth images, each represented
 	as numpy float arrays of dimension N x 256 x 256 x 1.
 	"""
-	if ds_name == DATASET_NAME_OASIS:
-		file_paths = get_oasis_file_paths(disk_path)
-	elif ds_name == DATASET_NAME_PROSTATE:
-		file_paths = get_prostate_file_paths(disk_path)
-	else:
-		raise Exception("Attempted to use an unsupported dataset")
+	file_paths = get_img_file_paths(disk_path)
 
 	num_output_imgs = 0
 
@@ -253,10 +233,14 @@ def load_and_subsample_images(disk_path, ds_name, num_imgs):
 
 def main():
     parser = argparse.ArgumentParser(description='Train FNet on MRI image data')
-    parser.add_argument('-d', '--disk_path', type=str, help="The path to the OASIS MRI images disk")
-    parser.add_argument('-s', '--training_size', type=int, default=1400, help="The size of the training dataset")
-    parser.add_argument('-e', '--training_error', type=str, help="The type of error to use for training FNet")
-    parser.add_argument('-n', '--dataset_name', type=str, help="The name of the training dataset - either 'oasis' or 'prostate'")
+    parser.add_argument('-d', '--disk_path', type=str, help="The path to a disk (directory) containing Analyze-formatted MRI images")
+    parser.add_argument('-t', '--training_size', type=int, default=1400, help="The size of the training dataset")
+    parser.add_argument('-e', '--training_error', type=str, help="The type of error to use for training the reconstruction network (either 'mse' or 'mae')")
+    parser.add_argument('-f', '--lf_percent', type=float, default=.04, help="The percentage of low frequency data to retain when subsampling training images")
+    parser.add_argument('-s', '--substep', type=int, default=4, help="The substep to use when subsampling training images")
+    parser.add_argument('-n', '--num_epochs', type=int, default=2000, help='The number of training epochs')
+    parser.add_argument('-b', '--batch_size', type=int, default=256, help='The training batch size. This will be sharded across all available GPUs')
+    parser.add_argument('-g', '--num_gpus', type=int, default=0, help=''
 
     args = parser.parse_args()
 
@@ -267,7 +251,6 @@ def main():
     	# until the aggregate number of slices is equivalent to the
     	# specified training size
     	training_idxs = range(args.training_size)
-    	#training_idxs = np.random.choice(range(len(x_train)), size=args.training_size)
     	x_train = x_train[training_idxs]
     	y_train = y_train[training_idxs]
 
