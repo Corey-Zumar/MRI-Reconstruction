@@ -1,4 +1,4 @@
-# MRI-Reconstruction
+# SubMRIne
 An open source implementation of the deep learning platform for undersampled MRI reconstruction described by Hyun et. al. (https://arxiv.org/pdf/1709.02576.pdf). In cojunction with this reimplementation, there is a writeup including extension experiments beyond those described in Hyun et. al. (http://corey-zumar.github.io/submrine).
 
 ## Introduction
