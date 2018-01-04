@@ -62,3 +62,10 @@ The steps for obtaining these plots are as follows:
    The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag.
    
 #### Computing loss over a test set
+
+## Maintainers
+
+GitHub usernames are in parentheses.
+
++ Corey Zumar (`Corey-Zumar`)
++ Alex Kot (`Alex-Kot`)
