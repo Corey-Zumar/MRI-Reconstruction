@@ -27,6 +27,7 @@ SFX_DIFF_PLOTS = "diffs"
 
 FNAME_LOSS_EVALUATION = "results.txt"
 
+
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
     """
     Loads and subsamples an MR image in Analyze format
@@ -50,15 +51,17 @@ def load_and_subsample(raw_img_path, substep, low_freq_percent):
         3. The original MR image (datatype `np.float32`)
     """
     original_img = load_image_data(analyze_img_path=raw_img_path)
-    subsampled_img, subsampled_k = subsample(analyze_img_data=original_img, 
-                                             substep=substep, 
-                                             low_freq_percent=low_freq_percent)
+    subsampled_img, subsampled_k = subsample(
+        analyze_img_data=original_img,
+        substep=substep,
+        low_freq_percent=low_freq_percent)
 
     original_img = np.moveaxis(original_img, -1, 0)
     subsampled_img = np.moveaxis(subsampled_img, -1, 0)
     subsampled_k = np.moveaxis(subsampled_k, -1, 0)
 
     return subsampled_img, subsampled_k, original_img
+
 
 def load_net(net_path):
     """
@@ -78,7 +81,9 @@ def load_net(net_path):
 
     return keras.models.load_model(net_path)
 
-def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_freq_percent):
+
+def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep,
+                      low_freq_percent):
     """
     Reconstructs a subsampled slice of an Analyze-formatted MR image 
 
@@ -116,15 +121,21 @@ def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_f
     fnet_output = np.squeeze(fnet_output)
 
     correction_subsampled_input = np.squeeze(subsampled_slice_k)
-    corrected_output = correct_output(subsampled_img_k=correction_subsampled_input,
-                                      network_output=fnet_output,
-                                      substep=substep,
-                                      low_freq_percent=low_freq_percent)
+    corrected_output = correct_output(
+        subsampled_img_k=correction_subsampled_input,
+        network_output=fnet_output,
+        substep=substep,
+        low_freq_percent=low_freq_percent)
 
     return corrected_output
 
 
-def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, exp_name=None):
+def eval_diff_plot(net_path,
+                   img_path,
+                   substep,
+                   low_freq_percent,
+                   results_dir,
+                   exp_name=None):
     """
     Given a path to an MR image in Analyze format, performs subsampling
     followed by reconstruction on all image slices and produces plots 
@@ -156,37 +167,40 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, e
         of the plots that are produced (one plot per slice).
     """
 
-    [
-        test_subsampled, 
-        test_subsampled_k, 
-        test_original
-    ] = load_and_subsample(raw_img_path=img_path, 
-                           substep=substep, 
-                           low_freq_percent=low_freq_percent)
+    [test_subsampled, test_subsampled_k, test_original] = load_and_subsample(
+        raw_img_path=img_path,
+        substep=substep,
+        low_freq_percent=low_freq_percent)
 
     fnet = load_net(net_path=net_path)
 
-    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_DIFF_PLOTS, exp_name=exp_name)
+    output_dir_path = create_output_dir(
+        base_path=results_dir, suffix=SFX_DIFF_PLOTS, exp_name=exp_name)
 
     for slice_idx in range(len(test_subsampled)):
-        reconstructed_slice = reconstruct_slice(fnet=fnet,
-                                                subsampled_slice=test_subsampled[slice_idx],
-                                                subsampled_slice_k=test_subsampled_k[slice_idx],
-                                                substep=substep,
-                                                low_freq_percent=low_freq_percent)
+        reconstructed_slice = reconstruct_slice(
+            fnet=fnet,
+            subsampled_slice=test_subsampled[slice_idx],
+            subsampled_slice_k=test_subsampled_k[slice_idx],
+            substep=substep,
+            low_freq_percent=low_freq_percent)
 
-        plt.figure(figsize=(15,15))
+        plt.figure(figsize=(15, 15))
         plt.subplot(131), plt.imshow(test_original[slice_idx], cmap='gray')
         plt.title('Original Slice'), plt.xticks([]), plt.yticks([])
-        plt.subplot(132), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
+        plt.subplot(132), plt.imshow(
+            np.squeeze(reconstructed_slice), cmap='gray')
         plt.title('Reconstructed Slice'), plt.xticks([]), plt.yticks([])
-        plt.subplot(133), plt.imshow(np.squeeze(test_subsampled[slice_idx]), cmap='gray')
+        plt.subplot(133), plt.imshow(
+            np.squeeze(test_subsampled[slice_idx]), cmap='gray')
         plt.title('Subsampled Slice'), plt.xticks([]), plt.yticks([])
 
         plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
         plt.savefig(plot_path, bbox_inches='tight')
 
-        print("Saved diff plot for slice {idx} to {pp}".format(idx=slice_idx, pp=plot_path))
+        print("Saved diff plot for slice {idx} to {pp}".format(
+            idx=slice_idx, pp=plot_path))
+
 
 def compute_loss(reconstructed_output, original, loss_type):
     """
@@ -222,7 +236,14 @@ def compute_loss(reconstructed_output, original, loss_type):
         raise Exception("Attempted to compute an invalid loss!")
 
 
-def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, results_dir, exp_name=None):
+def eval_loss(net_path,
+              data_path,
+              size,
+              loss_type,
+              substep,
+              low_freq_percent,
+              results_dir,
+              exp_name=None):
     """
     Given a path to a test set of MR images in Analyze format, performs subsampling 
     followed by reconstruction on `size` contiguous image slices and computes loss statistics
@@ -256,14 +277,14 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
     losses = []
     aliased_losses = []
     for img_path in img_paths:
-        [
-            test_subsampled, 
-            test_subsampled_k, 
-            test_original
-        ] = load_and_subsample(raw_img_path=img_path, 
-                               substep=substep, 
-                               low_freq_percent=low_freq_percent)
+        [test_subsampled, test_subsampled_k,
+         test_original] = load_and_subsample(
+             raw_img_path=img_path,
+             substep=substep,
+             low_freq_percent=low_freq_percent)
+
         num_slices = len(test_subsampled)
+
         if num_slices > NUM_EVALUATION_SLICES:
             slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
             slice_idxs_high = slice_idxs_low + NUM_EVALUATION_SLICES
@@ -272,22 +293,25 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
             slice_idxs = range(num_slices)
 
         for slice_idx in slice_idxs:
-            reconstructed_slice = reconstruct_slice(fnet=fnet,
-                                                    subsampled_slice=test_subsampled[slice_idx],
-                                                    subsampled_slice_k=test_subsampled_k[slice_idx],
-                                                    substep=substep,
-                                                    low_freq_percent=low_freq_percent)
+            reconstructed_slice = reconstruct_slice(
+                fnet=fnet,
+                subsampled_slice=test_subsampled[slice_idx],
+                subsampled_slice_k=test_subsampled_k[slice_idx],
+                substep=substep,
+                low_freq_percent=low_freq_percent)
 
             loss = compute_loss(
                 output=reconstructed_slice,
                 original=test_original[slice_idx],
                 loss_type=loss_type)
             losses.append(loss)
+
             aliased_loss = compute_loss(
                 output=test_subsampled[slice_idx],
                 original=test_original[slice_idx],
                 loss_type=loss_type)
             aliased_losses.append(aliased_loss)
+
             print("Evaluated {} images".format(len(losses)))
             if len(losses) >= size:
                 break
@@ -303,19 +327,21 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
     aliased_mean = np.mean(aliased_losses)
     aliased_std = np.std(aliased_losses)
 
-    print("Aliased MEAN: {}\nAliased STD: {}\nReconstructed MEAN: {}\nReconstructed STD: {}".format(
-        aliased_mean, aliased_std, reconstructed_mean, reconstructed_std))
+    print(
+        "Aliased MEAN: {}\nAliased STD: {}\nReconstructed MEAN: {}\nReconstructed STD: {}".
+        format(aliased_mean, aliased_std, reconstructed_mean,
+               reconstructed_std))
 
     results = {
-        "aliased_mean" : aliased_mean,
-        "aliased_std" : aliased_std,
-        "reconstructed_mean" : reconstructed_mean,
-        "reconstructed_std" : reconstructed_std
+        "aliased_mean": aliased_mean,
+        "aliased_std": aliased_std,
+        "reconstructed_mean": reconstructed_mean,
+        "reconstructed_std": reconstructed_std
     }
 
-    write_loss_results(results=results,
-                       results_dir=results_dir,
-                       exp_name=exp_name)
+    write_loss_results(
+        results=results, results_dir=results_dir, exp_name=exp_name)
+
 
 def write_loss_results(results, results_dir, exp_name=None):
     """
@@ -335,13 +361,15 @@ def write_loss_results(results, results_dir, exp_name=None):
         parameter
     """
 
-    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
+    output_dir_path = create_output_dir(
+        base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
     results_path = os.path.join(output_dir_path, FNAME_LOSS_EVALUATION)
 
     with open(results_path, "w") as results_file:
         json.dump(results, results_file, sort_keys=True, indent=4)
 
     print("Wrote results to {}".format(results_path))
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -350,7 +378,9 @@ def main():
         '-i',
         '--img_path',
         type=str,
-        help="The path to a full-resolution MR image to subsample, reconstruct, and diff-plot")
+        help=
+        "The path to a full-resolution MR image to subsample, reconstruct, and diff-plot"
+    )
     parser.add_argument(
         '-n', '--net_path', type=str, help="The path to a trained FNet")
     parser.add_argument(
@@ -396,34 +426,35 @@ def main():
         '-e',
         '--experiment_name',
         type=str,
-        help="The name of the experiment to use when writing evaluation results")
+        help="The name of the experiment to use when writing evaluation results"
+    )
 
     args = parser.parse_args()
 
-    if not args.substep:
-        raise Exception("--substep must be specified!")
-    elif not args.net_path:
+    if not args.net_path:
         raise Exception("--net_path must be specified!")
 
     if args.img_path:
-        eval_diff_plot(net_path=args.net_path,
-                       img_path=args.img_path, 
-                       substep=args.substep,
-                       low_freq_percent=args.lf_percent,
-                       results_dir=args.results_dir,
-                       exp_name=args.experiment_name)
+        eval_diff_plot(
+            net_path=args.net_path,
+            img_path=args.img_path,
+            substep=args.substep,
+            low_freq_percent=args.lf_percent,
+            results_dir=args.results_dir,
+            exp_name=args.experiment_name)
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
 
-        eval_loss(net_path=args.net_path,
-                  data_path=args.data_path,
-                  size=int(args.test_size),
-                  loss_type=args.loss_type,
-                  substep=args.substep,
-                  low_freq_percent=args.lf_percent,
-                  results_dir=args.results_dir,
-                  exp_name=args.experiment_name)
+        eval_loss(
+            net_path=args.net_path,
+            data_path=args.data_path,
+            size=int(args.test_size),
+            loss_type=args.loss_type,
+            substep=args.substep,
+            low_freq_percent=args.lf_percent,
+            results_dir=args.results_dir,
+            exp_name=args.experiment_name)
     else:
         raise Exception(
             "Either '--img_path' or '--data_path' must be specified!")

@@ -2,7 +2,7 @@ import sys
 import argparse
 import numpy as np
 
-from ..utils import subsample, load_image_data, multi_gpu_model, get_image_file_paths
+from ..utils import subsample, load_image_data, multi_gpu_model, get_image_file_paths, create_output_dir
 from ..utils.constants import SLICE_WIDTH, SLICE_HEIGHT
 
 from datetime import datetime
@@ -25,18 +25,17 @@ LEARNING_RATE = .001
 FNET_ERROR_MSE = "mse"
 FNET_ERROR_MAE = "mae"
 
-# Logging
+# Checkpointing
 CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
-
+SFX_NETWORK_CHECKPOINTS = "checkpoints"
 
 class FNet:
-    
     def __init__(self, num_gpus, error):
         self.architecture_exists = False
         self.num_gpus = num_gpus
         self.error = error
 
-    def train(self, y_folded, y_original, batch_size, num_epochs):
+    def train(self, y_folded, y_original, batch_size, num_epochs, checkpoints_dir):
         """
         Trains the specialized U-net for the MRI reconstruction task
 
@@ -51,13 +50,20 @@ class FNet:
             The training batch size
         num_epochs : int
             The number of training epochs
+        checkpoints_dir : str
+            The base directory under which to store network checkpoints 
+            after each iteration
         """
 
         if not self.architecture_exists:
             self._create_architecture()
 
+        checkpoints_dir_path = create_output_dir(base_path=checkpoints_dir,
+                                                 suffix=SFX_NETWORK_CHECKPOINTS,
+                                                 exp_name=None)
+        checkpoint_fpath_format = os.path.join(checkpoints_dir_path, CHECKPOINT_FILE_PATH_FORMAT)
         checkpoint_callback = ModelCheckpoint(
-            CHECKPOINT_FILE_PATH_FORMAT, monitor='val_loss', period=1)
+            checkpoint_fpath_format, monitor='val_loss', period=1)
 
         self.model.fit(
             y_folded,
@@ -75,7 +81,8 @@ class FNet:
         elif self.error == FNET_ERROR_MAE:
             return mean_absolute_error
         else:
-            raise Exception("Attempted to train network with an invalid loss function!")
+            raise Exception(
+                "Attempted to train network with an invalid loss function!")
 
     def _get_initializer_seed(self):
         epoch = datetime.utcfromtimestamp(0)
@@ -206,6 +213,7 @@ class FNet:
             metrics=[mean_squared_error])
 
         self.architecture_exists = True
+
 
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
     """
@@ -356,11 +364,17 @@ def main():
         type=int,
         default=0,
         help='The number of GPUs on which to train the model')
+    parser.add_argument(
+        '-c',
+        '--checkpoints_dir',
+        type=str,
+        default='/tmp'
+        help='The base directory under which to store network checkpoints after each iteration')
 
     args = parser.parse_args()
 
     if not args.disk_path:
-        raise Exception("The path to a disk (directory) of MR images in Analyze 7.5 format must be specified!")
+        raise Exception("--disk_path must be specified!")
 
     x_train, y_train = load_and_subsample_images(
         disk_path=args.disk_path,
@@ -377,7 +391,9 @@ def main():
         y_train = y_train[training_idxs]
 
     net = FNet(num_gpus=args.num_gpus, error=args.training_error)
-    net.train(y_folded=x_train, 
-              y_original=y_train,
-              batch_size=args.batch_size,
-              num_epochs=args.num_epochs)
+    net.train(
+        y_folded=x_train,
+        y_original=y_train,
+        batch_size=args.batch_size,
+        num_epochs=args.num_epochs,
+        checkpoints_dir=args.checkpoints_dir)

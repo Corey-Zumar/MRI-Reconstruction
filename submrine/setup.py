@@ -21,7 +21,9 @@ setup(
         'numpy>=1.13.1', 'nibabel>=2.2.0', 'matplotlib>=2.0.2', 'keras>=2.0.6',
         'scikit-image>=0.13.1'
     ],
-    entry_points = {
-    "console_scripts": ['submrine-train = submrine.train.train_net:main',
-                        'submrine-eval = submrine.eval.eval_net:main']
+    entry_points={
+        "console_scripts": [
+            'submrine-train = submrine.train.train_net:main',
+            'submrine-eval = submrine.eval.eval_net:main'
+        ]
     })

@@ -1,5 +1,5 @@
 """
-NOTE: This file was taken directly from 
+NOTE: This file was borrowed directly from 
 https://github.com/fchollet/keras/blob/master/keras/utils/training_utils.py
 """
 
@@ -22,7 +22,8 @@ def _normalize_device_name(name):
 
 
 def multi_gpu_model(model, gpus):
-    """Replicates a model on different GPUs.
+    """
+    Replicates a model on different GPUs.
     Specifically, this function implements single-machine
     multi-GPU data parallelism. It works in the following way:
     - Divide the model's input(s) into multiple sub-batches.

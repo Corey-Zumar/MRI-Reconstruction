@@ -6,6 +6,7 @@ from .constants import SLICE_WIDTH, SLICE_HEIGHT
 
 ANALYZE_DATA_EXTENSION_IMG = ".img"
 
+
 def _center_crop(img_data):
     slice_width, slice_height, _ = img_data.shape
     if slice_width < SLICE_WIDTH:
@@ -21,17 +22,19 @@ def _center_crop(img_data):
     height_crop = (slice_height - SLICE_HEIGHT) // 2
 
     if width_crop > 0:
-        img_data = img_data[width_crop:-width_crop,:,:]
+        img_data = img_data[width_crop:-width_crop, :, :]
     if height_crop > 0:
-        img_data = img_data[:,height_crop:-height_crop,:]
+        img_data = img_data[:, height_crop:-height_crop, :]
 
     return img_data
+
 
 def normalize(img_data):
     img_data -= img_data.min()
     img_data = img_data / img_data.max()
     img_data = img_data * 255.0
     return img_data
+
 
 def load_image(analyze_img_path):
     """
@@ -85,6 +88,7 @@ def load_image_data(analyze_img_path):
     img_data = normalize(img_data)
 
     return img_data
+
 
 def get_image_file_paths(dir_path):
     img_paths = []

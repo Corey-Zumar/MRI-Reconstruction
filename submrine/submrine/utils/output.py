@@ -4,6 +4,7 @@ from datetime import datetime
 
 TIME_DIR_NAME_FORMAT = "%Y%m%d-%H%M%S"
 
+
 def _get_output_dir_name(suffix, exp_name=None):
     """
     Parameters
@@ -26,6 +27,7 @@ def _get_output_dir_name(suffix, exp_name=None):
         dir_name = "{dn}-{en}".format(dn=dir_name, en=exp_name)
 
     return dir_name
+
 
 def create_output_dir(base_path, suffix, exp_name=None):
     """
