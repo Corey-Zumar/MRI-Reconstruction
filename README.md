@@ -3,6 +3,12 @@ An open source implementation of the deep learning platform for undersampled MRI
 
 ## Introduction
 
+Nuclear magnetic resonance imaging (MRI) is a technique that uses strong magnetic fields and radio waves to generate images of the body based on signals from protons. It is used to non-invasively provide physicians with visual information of a patient's anatomy. MRI is an expensive technique, it can be difficult to apply to children due to its sensitivity to movement, and its long scan duration can prove troublesome for some patients with claustrophobia. If a system could take undersampled MRI data and produce medically acceptable images, then the MRI scan time could be reduced, decreasing the procedure's cost and allowing more access for claustrophobic patients.
+
+MRI techniques collect raw data, known as *k-space* data, and produce images through complex data processing and inverse Fourier transforms. The raw *k-space* data is known to be low-quality with many missing entries, motivating research surrounding image reconstruction. Current MRI techniques must use intrascan data to reconstruct medically acceptable images, with state of the art techniques beginning to leverage inter-scan data to improve MRI acquisition.
+
+Producing medically acceptable images from highly undersampled (25-30\% of the current standard) MR data was the main challenge faced by Hyun et. al. In their paper, they demonstrated that the use of subsampling in conjunction with deep learning methods can produce MR images comparable to those of standard reconstruction techniques, reducing data collection and processing overhead. Here, we present a reimplementation of Hyun et. al.'s described method as a user-friendly python package. In addition to providing tools to replicate the results of Hyun et. al. using full-resolution training and test data, we include a procedure for reconstructing undersampled MR images for which full-resolution versions may not exist (**COMING SOON**).
+
 ## Installation
 This implementation is packaged to be PyPI compatible. The package is called `submrine`. It can be installed by invoking the following from the repository's root directory:
 
