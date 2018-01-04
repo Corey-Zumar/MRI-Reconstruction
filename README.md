@@ -71,13 +71,13 @@ These loss metrics consist of the following information:
    3. The MSE (or SSIM) between original MR image slices and their subsampled (**aliased**) versions
    4. The standard deviation associated with **(3)**
    
-MSE (mean per-pixel squared error) is defined as:
+   * MSE (mean per-pixel squared error) is defined as:
 
-![Image of MSE Equation](images/mse.gif)
+   ![Image of MSE Equation](images/mse.gif)
 
-such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice.
+   such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice.
 
-Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity](https://en.wikipedia.org/wiki/Structural_similarity)
+   * Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity] (https://en.wikipedia.org/wiki/Structural_similarity)
 
 The steps for obtaining these results on a sample test set are as follows:
 
@@ -96,6 +96,11 @@ The steps for obtaining these results on a sample test set are as follows:
    ```
    
    The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and evaluation.
+   
+### Subsampled Evaluation
+Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation.
+
+**COMING SOON**
 
 ## Maintainers
 
