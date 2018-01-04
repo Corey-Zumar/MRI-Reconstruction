@@ -82,6 +82,8 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, e
         plt.title('Original Slice'), plt.xticks([]), plt.yticks([])
         plt.subplot(122), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
         plt.title('Reconstructed Slice'), plt.xticks([]), plt.yticks([])
+        plt.subplot(123), plt.imshow(np.squeeze(test_subsampled[slice_idx]), cmap='gray')
+        plt.title('Subsampled Slice'), plt.xticks([]), plt.yticks([])
 
         plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
         plt.savefig(plot_path, bbox_inches='tight')
@@ -146,18 +148,25 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
 
         break
 
-    mean = np.mean(losses)
-    std = np.std(losses)
+    reconstructed_mean = np.mean(losses)
+    reconstructed_std = np.std(losses)
 
     aliased_mean = np.mean(aliased_losses)
     aliased_std = np.std(aliased_losses)
 
     print("Aliased MEAN: {}\nAliased STD: {}\nReconstructed MEAN: {}\nReconstructed STD: {}".format(
-        aliased_mean, aliased_std, mean, std))
+        aliased_mean, aliased_std, reconstructed_mean, reconstructed_std))
+
+    write_loss_results(results_dir=results_dir,
+                       exp_name=exp_name,
+                       aliased_mean=aliased_mean,
+                       aliased_std=aliased_std,
+                       reconstructed_mean=reconstructed_mean,
+                       reconstructed_std=reconstructed_std)
 
     return losses
 
-def write_loss_results(results_dir, exp_name, alised_mean, alised_std, reconstructed_mean, reconstructed_std):
+def write_loss_results(results_dir, exp_name, aliased_mean, alised_std, reconstructed_mean, reconstructed_std):
     output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
     results_path = os.path.join(output_dir_path, FNAME_LOSS_EVALUATION)
 
