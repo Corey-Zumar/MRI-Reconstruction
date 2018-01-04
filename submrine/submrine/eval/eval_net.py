@@ -25,7 +25,7 @@ NUM_EVALUATION_SLICES = 35
 SFX_LOSS_EVALUATION = "losses"
 SFX_DIFF_PLOTS = "diffs"
 
-FNAME_LOSS_EVALUATION = "results.txt"
+FNAME_LOSS_EVALUATION = "results.json"
 
 
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
