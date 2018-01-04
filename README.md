@@ -43,9 +43,9 @@ These evaluation procedures allow users to benchmark the effectiveness of the im
 For testing purposes, this evaluation procedure will produce diff plots for each slice in a specified full-resolution MR image.
 The diff plots for every slice consists of the following grayscale images:
 
-   i. The original slice
-   ii. A subsampled copy of the slice
-   iii. A reconstruction of the subsampled slice 
+   1. The original slice
+   2. A subsampled copy of the slice
+   3. A reconstruction of the subsampled slice 
 
 The steps for obtaining these plots are as follows:
 
