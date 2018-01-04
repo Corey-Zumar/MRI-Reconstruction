@@ -197,6 +197,7 @@ def eval_diff_plot(net_path,
 
         plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
         plt.savefig(plot_path, bbox_inches='tight')
+        plt.close()
 
         print("Saved diff plot for slice {idx} to {pp}".format(
             idx=slice_idx, pp=plot_path))
