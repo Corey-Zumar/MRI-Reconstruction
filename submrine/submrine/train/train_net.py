@@ -66,11 +66,13 @@ class FNet:
         checkpoint_callback = ModelCheckpoint(
             checkpoint_fpath_format, monitor='val_loss', period=1)
 
+        print("Network checkpoints will be saved to: '{}'".format(checkpoints_dir_path))
+
         self.model.fit(
             y_folded,
             y_original,
             batch_size=batch_size,
-            nb_epoch=num_epochs,
+            epochs=num_epochs,
             shuffle=True,
             validation_split=.2,
             verbose=1,
