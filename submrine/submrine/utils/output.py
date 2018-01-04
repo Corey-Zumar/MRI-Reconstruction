@@ -49,7 +49,7 @@ def create_output_dir(base_path, suffix, exp_name=None):
     """
 
     dir_name = _get_output_dir_name(suffix=suffix, exp_name=exp_name)
-    dir_path = os.path.join(base_path, dir_name)
+    dir_path = os.path.join(os.path.abspath(base_path), dir_name)
 
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
