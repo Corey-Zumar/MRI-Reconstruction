@@ -9,6 +9,8 @@ MRI techniques collect raw data, known as *k-space* data, and produce images thr
 
 Producing medically acceptable images from highly undersampled (25-30\% of the current standard) MR data was the main challenge faced by Hyun et. al. In their paper, they demonstrated that the use of subsampling in conjunction with deep learning methods can produce MR images comparable to those of standard reconstruction techniques, reducing data collection and processing overhead. Here, we present a reimplementation of Hyun et. al.'s described method as a user-friendly python package. In addition to providing tools to replicate the results of Hyun et. al. using full-resolution training and test data, we include a procedure for reconstructing undersampled MR images for which full-resolution versions may not exist (**COMING SOON**).
 
+![Image of a reconstruction diff plot for a saggital plane brain MR image slice](images/diff_plot_sample.png)
+
 ## Installation
 This implementation is packaged to be PyPI compatible. The package is called `submrine`. It can be installed by invoking the following from the repository's root directory:
 
