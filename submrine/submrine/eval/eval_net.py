@@ -253,7 +253,7 @@ def main():
                   substep=args.substep,
                   low_freq_percent=args.lf_percent,
                   results_dir=args.results_dir,
-                  exp_name=args.experient_name)
+                  exp_name=args.experiment_name)
     else:
         raise Exception(
             "Either '--img_path' or '--data_path' must be specified!")
