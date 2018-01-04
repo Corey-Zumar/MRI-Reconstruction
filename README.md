@@ -1,5 +1,5 @@
 # SubMRIne
-An open source implementation of the deep learning platform for undersampled MRI reconstruction described by Hyun et. al. (https://arxiv.org/pdf/1709.02576.pdf). In cojunction with this reimplementation, there is a writeup including extension experiments beyond those described in Hyun et. al. (http://corey-zumar.github.io/submrine).
+An open source implementation of the deep learning platform for undersampled MRI reconstruction described by Hyun et. al. (https://arxiv.org/pdf/1709.02576.pdf). In cojunction with this reimplementation, there is a writeup including extension experiments beyond those described in Hyun et. al. ([http://corey-zumar.github.io/submrine/](http://corey-zumar.github.io/submrine)).
 
 ## Introduction
 
@@ -71,11 +71,11 @@ These loss metrics consist of the following information:
    3. The MSE (or SSIM) between original MR image slices and their subsampled (**aliased**) versions
    4. The standard deviation associated with **(3)**
    
-   * MSE (mean per-pixel squared error) is defined as:
+   * MSE (mean normalized per-pixel squared error) is defined as:
 
    ![Image of MSE Equation](images/mse.gif)
 
-   such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice.
+   such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice. For a detailed explanation of this definition, please refer to the **Loss Calculation** subsection on **Page 4** of the writeup ([http://corey-zumar.github.io/submrine/](http://corey-zumar.github.io/submrine/)). 
 
    * Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity] (https://en.wikipedia.org/wiki/Structural_similarity)
 
