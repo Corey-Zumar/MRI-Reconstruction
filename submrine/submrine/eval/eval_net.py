@@ -84,7 +84,7 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, e
         plt.title('Reconstructed Slice'), plt.xticks([]), plt.yticks([])
 
         plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
-        plt.savefig(fname=plot_path, bbox_inches='tight')
+        plt.savefig(plot_path, bbox_inches='tight')
 
         print("Wrote diff plot for slice {idx} to {pp}".format(idx=slice_idx, pp=plot_path))
 
