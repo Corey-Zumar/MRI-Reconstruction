@@ -3,8 +3,9 @@ import os
 import argparse
 import keras
 import numpy as np
+import json
 
-from ..utils import subsample, correct_output, load_image_data, get_image_file_paths, normalize
+from ..utils import subsample, correct_output, load_image_data, get_image_file_paths, normalize, create_output_dir
 from matplotlib import pyplot as plt
 from skimage.measure import compare_ssim as ssim
 
@@ -17,6 +18,12 @@ LOSS_TYPE_SSIM = "ssim"
 
 # Loss computation
 NUM_EVALUATION_SLICES = 35
+
+# Result writing
+SFX_LOSS_EVALUATION = "losses"
+SFX_DIFF_PLOTS = "diffs"
+
+FNAME_LOSS_EVALUATION = "results.txt"
 
 def load_image(raw_img_path, substep, low_freq_percent):
     original_img = load_image_data(analyze_img_path=raw_img_path)
@@ -51,7 +58,7 @@ def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_f
     return corrected_output
 
 
-def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
+def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, exp_name):
     [
         test_subsampled, 
         test_subsampled_K, 
@@ -62,18 +69,24 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent):
 
     fnet = load_net(net_path=net_path)
 
-    reconstructed_slice = reconstruct_slice(fnet=fnet,
-                                            subsampled_slice=test_subsampled[70],
-                                            subsampled_slice_k=test_subsampled_K[70],
-                                            substep=substep,
-                                            low_freq_percent=low_freq_percent)
+    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_DIFF_PLOTS, exp_name=exp_name)
 
-    plt.subplot(121), plt.imshow(test_original[70], cmap='gray')
-    plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-    plt.subplot(122), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
-    plt.title('Corrected Image'), plt.xticks([]), plt.yticks([])
-    plt.show()
+    for slice_idx in range(len(test_subsampled)):
+        reconstructed_slice = reconstruct_slice(fnet=fnet,
+                                                subsampled_slice=test_subsampled[slice_idx],
+                                                subsampled_slice_k=test_subsampled_K[slice_idx],
+                                                substep=substep,
+                                                low_freq_percent=low_freq_percent)
 
+        plt.subplot(121), plt.imshow(test_original[slice_idx], cmap='gray')
+        plt.title('Original Slice'), plt.xticks([]), plt.yticks([])
+        plt.subplot(122), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
+        plt.title('Reconstructed Slice'), plt.xticks([]), plt.yticks([])
+
+        plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
+        plt.savefig(fname=plot_path, bbox_inches='tight')
+
+        print("Wrote diff plot for slice {idx} to {pp}".format(idx=slice_idx, pp=plot_path))
 
 def compute_loss(output, original, loss_type):
     output = np.array(output, dtype=np.float64) / 255.0
@@ -86,7 +99,7 @@ def compute_loss(output, original, loss_type):
         raise Exception("Attempted to compute an invalid loss!")
 
 
-def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
+def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, results_dir, exp_name):
     fnet = load_net(net_path)
     img_paths = get_image_file_paths(data_path)
     losses = []
@@ -139,11 +152,26 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent):
     aliased_mean = np.mean(aliased_losses)
     aliased_std = np.std(aliased_losses)
 
-    print("Aliased MEAN: {}, Aliased STD: {}, MEAN: {}, STD: {}".format(
+    print("Aliased MEAN: {}\nAliased STD: {}\nReconstructed MEAN: {}\nReconstructed STD: {}".format(
         aliased_mean, aliased_std, mean, std))
 
     return losses
 
+def write_loss_results(results_dir, exp_name, alised_mean, alised_std, reconstructed_mean, reconstructed_std):
+    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
+    results_path = os.path.join(output_dir_path, FNAME_LOSS_EVALUATION)
+
+    results_dict = {
+        "aliased_mean" : aliased_mean,
+        "aliased_std" : aliased_std,
+        "reconstructed_mean" : reconstructed_mean,
+        "reconstructed_std" : reconstructed_std
+    }
+
+    with open(results_path, "w") as results_file:
+        json.dump(results_dict, results_file)
+
+    print("Wrote results to {}".format(results_path))
 
 def main():
     parser = argparse.ArgumentParser(
@@ -188,6 +216,17 @@ def main():
         type=str,
         default='mse',
         help="The type of evaluation loss. One of: 'mse', 'ssim'")
+    parser.add_argument(
+        '-r',
+        '--results_dir',
+        type=str,
+        default='/tmp',
+        help="The base directory to which to write evaluation results")
+    parser.add_argument(
+        '-e',
+        '--experiment_name',
+        type=str,
+        help="The name of the experiment to use when writing evaluation results")
 
     args = parser.parse_args()
 
@@ -200,7 +239,9 @@ def main():
         eval_diff_plot(net_path=args.net_path,
                        img_path=args.img_path, 
                        substep=args.substep,
-                       low_freq_percent=args.lf_percent)
+                       low_freq_percent=args.lf_percent,
+                       results_dir=args.results_dir,
+                       exp_name=args.experiment_name)
     elif args.data_path:
         if not args.test_size:
             raise Exception("--test_size must be specified!")
@@ -210,7 +251,9 @@ def main():
                   size=int(args.test_size),
                   loss_type=args.loss_type,
                   substep=args.substep,
-                  low_freq_percent=args.lf_percent)
+                  low_freq_percent=args.lf_percent,
+                  results_dir=args.results_dir,
+                  exp_name=args.experient_name)
     else:
         raise Exception(
             "Either '--img_path' or '--data_path' must be specified!")
