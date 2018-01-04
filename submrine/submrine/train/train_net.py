@@ -368,7 +368,7 @@ def main():
         '-c',
         '--checkpoints_dir',
         type=str,
-        default='/tmp'
+        default='/tmp',
         help='The base directory under which to store network checkpoints after each iteration')
 
     args = parser.parse_args()
