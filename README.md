@@ -81,9 +81,9 @@ These loss metrics consist of the following information:
    
    * MSE (mean normalized per-pixel squared error) is defined as:
 
-   ![Image of MSE Equation](images/mse.gif)
+      ![Image of MSE Equation](images/mse.gif)
 
-   such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice. For a detailed explanation of this definition, please refer to the **Loss Calculation** subsection on **Page 4** of the writeup ([http://corey-zumar.github.io/submrine/](http://corey-zumar.github.io/submrine/)). 
+      such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice. For a detailed explanation of this definition, please refer to the **Loss Calculation** subsection on **Page 4** of the writeup ([http://corey-zumar.github.io/submrine/](http://corey-zumar.github.io/submrine/)). 
 
    * Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity] (https://en.wikipedia.org/wiki/Structural_similarity)
 
