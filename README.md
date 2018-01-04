@@ -85,7 +85,7 @@ These loss metrics consist of the following information:
 
       such that `L_i` is a slice of a full-resolution MR image and `R_i` is a subsampled and reconstructed version of the slice. For a detailed explanation of this definition, please refer to the **Loss Calculation** subsection on **Page 4** of the writeup ([http://corey-zumar.github.io/submrine/](http://corey-zumar.github.io/submrine/)). 
 
-   * Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity] (https://en.wikipedia.org/wiki/Structural_similarity)
+   * Information regarding SSIM is available here: [https://en.wikipedia.org/wiki/Structural_similarity](https://en.wikipedia.org/wiki/Structural_similarity)
 
 The steps for obtaining these results on a sample test set are as follows:
 
