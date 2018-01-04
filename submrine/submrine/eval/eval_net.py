@@ -6,6 +6,8 @@ import numpy as np
 import json
 
 from ..utils import subsample, correct_output, load_image_data, get_image_file_paths, normalize, create_output_dir
+from ..utils.constants import SLICE_WIDTH, SLICE_HEIGHT
+
 from matplotlib import pyplot as plt
 from skimage.measure import compare_ssim as ssim
 
@@ -25,22 +27,86 @@ SFX_DIFF_PLOTS = "diffs"
 
 FNAME_LOSS_EVALUATION = "results.txt"
 
-def load_image(raw_img_path, substep, low_freq_percent):
+def load_and_subsample(raw_img_path, substep, low_freq_percent):
+    """
+    Loads and subsamples an MR image in Analyze format
+
+    Parameters
+    ------------
+    raw_img_path : str
+        The path to the MR image
+    substep : int
+        The substep to use when subsampling image slices
+    low_freq_percent : float
+        The percentage of low frequency data to retain when subsampling slices
+
+    Returns
+    ------------
+    tuple
+        A triple containing the following ordered numpy arrays:
+
+        1. The subsampled MR image (datatype `np.float32`)
+        2. The k-space representation of the subsampled MR image (datatype `np.complex128`)
+        3. The original MR image (datatype `np.float32`)
+    """
     original_img = load_image_data(analyze_img_path=raw_img_path)
-    subsampled_img, subsampled_K = subsample(analyze_img_data=original_img, 
+    subsampled_img, subsampled_k = subsample(analyze_img_data=original_img, 
                                              substep=substep, 
                                              low_freq_percent=low_freq_percent)
 
     original_img = np.moveaxis(original_img, -1, 0)
     subsampled_img = np.moveaxis(subsampled_img, -1, 0)
-    subsampled_K = np.moveaxis(subsampled_K, -1, 0)
+    subsampled_k = np.moveaxis(subsampled_k, -1, 0)
 
-    return subsampled_img, subsampled_K, original_img
+    return subsampled_img, subsampled_k, original_img
 
 def load_net(net_path):
+    """
+    Loads the serialized deep neural network that
+    will be used during the reconstruction process
+
+    Parameters
+    ------------
+    net_path : str
+        The path to the reconstruction network
+
+    Returns
+    ------------
+    The reconstruction network, represented as 
+    a Keras model instance
+    """
+
     return keras.models.load_model(net_path)
 
 def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_freq_percent):
+    """
+    Reconstructs a subsampled slice of an Analyze-formatted MR image 
+
+    Parameters
+    ------------
+    fnet : Keras model
+        The reconstruction network
+    subsampled_slice : np.ndarray
+        The subsampled slice that will be reconstructed,
+        represented as a numpy array of datatype `np.float32`
+        and shape (SLICE_WIDTH, SLICE_HEIGHT)
+    subsampled_slice_k : np.ndarray
+        A k-space representation of the slice that will
+        be reconstructed, represented as numpy array of
+        datatype `np.complex128`
+    substep : int
+        The substep with which the slice was subsampled
+    low_freq_percent : float
+        The percentage of low frequency data with which
+        to augment slices during reconstruction
+
+    Returns
+    ------------
+    np.ndarray
+        The reconstructed image slice, represented as a numpy array
+        of datatype `np.float32` and shape (SLICE_WIDTH, SLICE_HEIGHT)
+    """
+
     # Reshape input to shape (1, SLICE_WIDTH, SLICE_HEIGHT, 1)
     fnet_input = np.expand_dims(subsampled_slice, 0)
     fnet_input = np.expand_dims(fnet_input, -1)
@@ -50,7 +116,7 @@ def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_f
     fnet_output = np.squeeze(fnet_output)
 
     correction_subsampled_input = np.squeeze(subsampled_slice_k)
-    corrected_output = correct_output(subsampled_img_K=correction_subsampled_input,
+    corrected_output = correct_output(subsampled_img_k=correction_subsampled_input,
                                       network_output=fnet_output,
                                       substep=substep,
                                       low_freq_percent=low_freq_percent)
@@ -58,14 +124,45 @@ def reconstruct_slice(fnet, subsampled_slice, subsampled_slice_k, substep, low_f
     return corrected_output
 
 
-def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, exp_name):
+def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, exp_name=None):
+    """
+    Given a path to an MR image in Analyze format, performs subsampling
+    followed by reconstruction on all image slices and produces plots 
+    containing the following grayscale images for each slice:
+    
+    1. The original slice
+    2. The reconstructed slice
+    3. The subsampled slice
+
+    These plots are then saved under the directory specified by `results_dir`
+
+    Parameters
+    ------------
+    net_path : str
+        The path to the serialized deep neural network that
+        will be used during the reconstruction process
+    img_path : str
+        The path to an MR image in Analyze 7.5 format
+        with extension `.img`
+    substep : int
+        The substep to use when subsampling image slices
+    low_freq_percent : float
+        The percentage of low frequency data to retain when subsampling slices
+    results_dir : str
+        The directory under which to save the plots for each slice
+    exp_name : str
+        (optional) The experiment name to include when naming the
+        results subdirectory. This subdirectory will contain all
+        of the plots that are produced (one plot per slice).
+    """
+
     [
         test_subsampled, 
-        test_subsampled_K, 
+        test_subsampled_k, 
         test_original
-    ] = load_image(raw_img_path=img_path, 
-                   substep=substep, 
-                   low_freq_percent=low_freq_percent)
+    ] = load_and_subsample(raw_img_path=img_path, 
+                           substep=substep, 
+                           low_freq_percent=low_freq_percent)
 
     fnet = load_net(net_path=net_path)
 
@@ -74,34 +171,86 @@ def eval_diff_plot(net_path, img_path, substep, low_freq_percent, results_dir, e
     for slice_idx in range(len(test_subsampled)):
         reconstructed_slice = reconstruct_slice(fnet=fnet,
                                                 subsampled_slice=test_subsampled[slice_idx],
-                                                subsampled_slice_k=test_subsampled_K[slice_idx],
+                                                subsampled_slice_k=test_subsampled_k[slice_idx],
                                                 substep=substep,
                                                 low_freq_percent=low_freq_percent)
 
-        plt.subplot(311), plt.imshow(test_original[slice_idx], cmap='gray')
+        plt.figure(figsize=(15,15))
+        plt.subplot(131), plt.imshow(test_original[slice_idx], cmap='gray')
         plt.title('Original Slice'), plt.xticks([]), plt.yticks([])
-        plt.subplot(312), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
+        plt.subplot(132), plt.imshow(np.squeeze(reconstructed_slice), cmap='gray')
         plt.title('Reconstructed Slice'), plt.xticks([]), plt.yticks([])
-        plt.subplot(313), plt.imshow(np.squeeze(test_subsampled[slice_idx]), cmap='gray')
+        plt.subplot(133), plt.imshow(np.squeeze(test_subsampled[slice_idx]), cmap='gray')
         plt.title('Subsampled Slice'), plt.xticks([]), plt.yticks([])
 
         plot_path = os.path.join(output_dir_path, "{}.png".format(slice_idx))
         plt.savefig(plot_path, bbox_inches='tight')
 
-        print("Wrote diff plot for slice {idx} to {pp}".format(idx=slice_idx, pp=plot_path))
+        print("Saved diff plot for slice {idx} to {pp}".format(idx=slice_idx, pp=plot_path))
 
-def compute_loss(output, original, loss_type):
-    output = np.array(output, dtype=np.float64) / 255.0
+def compute_loss(reconstructed_output, original, loss_type):
+    """
+    Computes the loss associated with an MR image slice 
+    and a reconstruction of the slice after subsampling. 
+    The loss function is specified by `loss_type`
+    
+    Parameters
+    ------------
+    reconstructed_output : np.ndarray
+        The reconstructed MR image slice, represented as a 
+        numpy array with datatype `np.float32`
+    original : np.ndarray
+        The original MR image slice (before subsampling),
+        represented as a numpy array with datatype `np.float32`
+    loss_type : str
+        The type of loss to compute (either 'mse' or 'mae')
+
+    Returns
+    ------------
+    float
+        The specified loss computed between the
+        reconstructed slice and the original slice
+    """
+
+    output = np.array(reconstructed_output, dtype=np.float64) / 255.0
     original = np.array(original, dtype=np.float64) / 255.0
     if loss_type == LOSS_TYPE_MSE:
-        return np.mean((output - original)**2)
+        return np.mean((reconstructed_output - original)**2)
     elif loss_type == LOSS_TYPE_SSIM:
-        return ssim(output, original)
+        return ssim(reconstructed_output, original)
     else:
         raise Exception("Attempted to compute an invalid loss!")
 
 
-def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, results_dir, exp_name):
+def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, results_dir, exp_name=None):
+    """
+    Given a path to a test set of MR images in Analyze format, performs subsampling 
+    followed by reconstruction on `size` contiguous image slices and computes loss statistics
+    between each slice and its associated subsampled and reconstructed version. These
+    statistics are averaged and saved under the directory specified by `results_dir`
+
+    Parameters
+    ------------
+    net_path : str
+        The path to the serialized deep neural network that
+        will be used during the reconstruction process
+    img_path : str
+        The path to an MR image in Analyze 7.5 format
+        with extension `.img`
+    size : int
+        The number of image slices for which to compute loss statistics
+    substep : int
+        The substep to use when subsampling image slices
+    low_freq_percent : float
+        The percentage of low frequency data to retain when subsampling slices
+    results_dir : str
+        The directory under which to save the plots for each slice
+    exp_name : str
+        (optional) The experiment name to include when naming the
+        results subdirectory. This subdirectory will contain all
+        of the plots that are produced (one plot per slice).
+    """
+
     fnet = load_net(net_path)
     img_paths = get_image_file_paths(data_path)
     losses = []
@@ -111,9 +260,9 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
             test_subsampled, 
             test_subsampled_k, 
             test_original
-        ] = load_image(raw_img_path=img_path, 
-                       substep=substep, 
-                       low_freq_percent=low_freq_percent)
+        ] = load_and_subsample(raw_img_path=img_path, 
+                               substep=substep, 
+                               low_freq_percent=low_freq_percent)
         num_slices = len(test_subsampled)
         if num_slices > NUM_EVALUATION_SLICES:
             slice_idxs_low = (num_slices - NUM_EVALUATION_SLICES) // 2
@@ -157,28 +306,40 @@ def eval_loss(net_path, data_path, size, loss_type, substep, low_freq_percent, r
     print("Aliased MEAN: {}\nAliased STD: {}\nReconstructed MEAN: {}\nReconstructed STD: {}".format(
         aliased_mean, aliased_std, reconstructed_mean, reconstructed_std))
 
-    write_loss_results(results_dir=results_dir,
-                       exp_name=exp_name,
-                       aliased_mean=aliased_mean,
-                       aliased_std=aliased_std,
-                       reconstructed_mean=reconstructed_mean,
-                       reconstructed_std=reconstructed_std)
-
-    return losses
-
-def write_loss_results(results_dir, exp_name, aliased_mean, aliased_std, reconstructed_mean, reconstructed_std):
-    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
-    results_path = os.path.join(output_dir_path, FNAME_LOSS_EVALUATION)
-
-    results_dict = {
+    results = {
         "aliased_mean" : aliased_mean,
         "aliased_std" : aliased_std,
         "reconstructed_mean" : reconstructed_mean,
         "reconstructed_std" : reconstructed_std
     }
 
+    write_loss_results(results=results,
+                       results_dir=results_dir,
+                       exp_name=exp_name)
+
+def write_loss_results(results, results_dir, exp_name=None):
+    """
+    Writes loss results to the specified directory
+
+    Parameters
+    ------------
+    results : dict
+        A json-formattable dictionary containing
+        result data
+    results_dir : str
+        The base directory under which to save result data
+    exp_name : str
+        (optional) The experiment name to include when naming the
+        results subdirectory. This subdirectory will contain a
+        results file with the content specified by the `results`
+        parameter
+    """
+
+    output_dir_path = create_output_dir(base_path=results_dir, suffix=SFX_LOSS_EVALUATION, exp_name=exp_name)
+    results_path = os.path.join(output_dir_path, FNAME_LOSS_EVALUATION)
+
     with open(results_path, "w") as results_file:
-        json.dump(results_dict, results_file)
+        json.dump(results, results_file, sort_keys=True, indent=4)
 
     print("Wrote results to {}".format(results_path))
 

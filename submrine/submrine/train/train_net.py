@@ -2,6 +2,9 @@ import sys
 import argparse
 import numpy as np
 
+from ..utils import subsample, load_image_data, multi_gpu_model, get_image_file_paths
+from ..utils.constants import SLICE_WIDTH, SLICE_HEIGHT
+
 from datetime import datetime
 
 from keras.models import Model
@@ -12,8 +15,6 @@ from keras.losses import mean_squared_error, mean_absolute_error
 from keras.optimizers import RMSprop
 from keras.initializers import RandomNormal
 from keras.callbacks import ModelCheckpoint
-
-from ..utils import subsample, load_image_data, multi_gpu_model, get_image_file_paths
 
 # Training set construction
 NUM_SAMPLE_SLICES = 35
@@ -29,6 +30,7 @@ CHECKPOINT_FILE_PATH_FORMAT = "fnet-{epoch:02d}.hdf5"
 
 
 class FNet:
+    
     def __init__(self, num_gpus, error):
         self.architecture_exists = False
         self.num_gpus = num_gpus
@@ -206,6 +208,27 @@ class FNet:
         self.architecture_exists = True
 
 def load_and_subsample(raw_img_path, substep, low_freq_percent):
+    """
+    Loads and subsamples an MR image in Analyze format
+
+    Parameters
+    ------------
+    raw_img_path : str
+        The path to the MR image
+    substep : int
+        The substep to use when subsampling image slices
+    low_freq_percent : float
+        The percentage of low frequency data to retain when subsampling slices
+
+    Returns
+    ------------
+    tuple
+        A pair containing the following ordered numpy arrays:
+
+        1. The subsampled MR image (datatype `np.float32`)
+        2. The original MR image (datatype `np.float32`)
+    """
+
     original_img = load_image_data(analyze_img_path=raw_img_path)
     subsampled_img, _ = subsample(
         analyze_img_data=original_img,
@@ -224,10 +247,6 @@ def load_and_subsample(raw_img_path, substep, low_freq_percent):
 
         subsampled_img = subsampled_img[relevant_idxs]
         original_img = original_img[relevant_idxs]
-
-    from matplotlib import pyplot as plt
-    plt.imshow(np.squeeze(subsampled_img[0]))
-    plt.show()
 
     return subsampled_img, original_img
 

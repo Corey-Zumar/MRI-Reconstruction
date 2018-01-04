@@ -24,18 +24,18 @@ def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
 
     Returns
     ------------
-    imgarr: numpy.core.memmap.memmap
+    imgarr : numpy.core.memmap.memmap
     An numpy image object representing a list of subsampled human-
     interpretable images. Values are scaled to range from 0-255
 
-    subsampled_img_K: numpy.core.memmap.memmap
+    subsampled_img_k : numpy.core.memmap.memmap
     An numpy image object representing a list of subsampled images in k-space.
     These are complex numbers
     """
 
     data = np.copy(analyze_img_data)
 
-    subsampled_img_K = np.ones_like(data, dtype='complex')
+    subsampled_img_k = np.ones_like(data, dtype='complex')
     imgarr = np.ones_like(data)
 
     np.set_printoptions(threshold='nan')
@@ -74,6 +74,6 @@ def subsample(analyze_img_data, substep=4, low_freq_percent=0.04):
             np.fft.ifftshift(subshift)).real).astype(float)
         imgarr[:, :, slice_idx] = reconsubshift
 
-        subsampled_img_K[:, :, slice_idx] = subshift
-        
-    return imgarr, subsampled_img_K
+        subsampled_img_k[:, :, slice_idx] = subshift
+
+    return imgarr, subsampled_img_k

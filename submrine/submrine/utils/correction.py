@@ -8,7 +8,7 @@ Created on Sun Sep 24 22:21:25 2017
 import numpy as np
 
 
-def correct_output(subsampled_img_K,
+def correct_output(subsampled_img_k,
                    network_output,
                    substep=4,
                    low_freq_percent=0.04):
@@ -17,8 +17,8 @@ def correct_output(subsampled_img_K,
 
     Parameters
     ------------
-    subsampled_img_K : numpy.core.memmap.memmap
-        K-space subsampled image used to generate network input
+    subsampled_img_k : numpy.core.memmap.memmap
+        The k-space subsampled image used to generate network input
     network_output: numpy.core.memmap.memmap
         Output from the CNN
     substep: int
@@ -38,7 +38,7 @@ def correct_output(subsampled_img_K,
 
     # shifts zero frequency to center
     tshift_output = np.fft.fftshift(t_output)
-    tshift_input = subsampled_img_K
+    tshift_input = subsampled_img_k
 
     mod_low_freq_percent = 1.0 / float(
         substep) * low_freq_percent + low_freq_percent

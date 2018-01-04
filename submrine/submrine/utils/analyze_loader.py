@@ -6,7 +6,7 @@ from .constants import SLICE_WIDTH, SLICE_HEIGHT
 
 ANALYZE_DATA_EXTENSION_IMG = ".img"
 
-def center_crop(img_data):
+def _center_crop(img_data):
     slice_width, slice_height, _ = img_data.shape
     if slice_width < SLICE_WIDTH:
         raise Exception(
@@ -81,7 +81,7 @@ def load_image_data(analyze_img_path):
 
     img_data = load_image(analyze_img_path).get_data()
     img_data = np.squeeze(img_data).astype(np.float32)
-    img_data = center_crop(img_data)
+    img_data = _center_crop(img_data)
     img_data = normalize(img_data)
 
     return img_data
