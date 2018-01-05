@@ -18,7 +18,11 @@ This implementation is packaged to be PyPI compatible. The package is called `su
 $ pip install -e submrine
 ```
 
-The installation process creates two console entry points: `submrine-train` and `submrine-eval` that can be used to **train** reconstruction networks and **evaluate** the reconstruction process on test images and datasets, respectively.
+The installation process creates three console entry points: `submrine-train`, `submrine-test`, and `submrine-eval` that can be used to:
+
+1. **Train** reconstruction networks
+2. **Test** the full reconstruction process on test images and datasets, respectively
+2. **Evaluate** the reconstruction network (a component of the full process) on undersampled images.
 
 ## Usage
 
@@ -64,7 +68,7 @@ The steps for obtaining these plots are as follows:
    3. Obtain loss for every slice in the OASIS test image by invoking the following command:
 
       ```sh
-      $ submrine-eval -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
+      $ submrine-test -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
       ```
 
       The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag. Note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
@@ -100,7 +104,7 @@ The steps for obtaining these results on a sample test set are as follows:
 3. Compute loss metrics over a subset of the test disc of size `SIZE` as follows:
 
    ```sh
-   $ submrine-eval -n /path/to/reconstruction/network -d /path/to/test/disc -r /path/to/results/dir -t <SIZE> -s 4 -f .04
+   $ submrine-test -n /path/to/reconstruction/network -d /path/to/test/disc -r /path/to/results/dir -t <SIZE> -s 4 -f .04
    ```
    
    The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
