@@ -7,7 +7,7 @@ Nuclear magnetic resonance imaging (MRI) is a technique that uses strong magneti
 
 MRI techniques collect raw data, known as *k-space* data, and produce images through complex data processing and inverse Fourier transforms. The raw *k-space* data is known to be low-quality with many missing entries, motivating research surrounding image reconstruction. Current MRI techniques must use intrascan data to reconstruct medically acceptable images, with state of the art techniques beginning to leverage inter-scan data to improve MRI acquisition.
 
-Producing medically acceptable images from highly undersampled (25-30\% of the current standard) MR data was the main challenge faced by Hyun et. al. In their paper, they demonstrated that the use of subsampling in conjunction with deep learning methods can produce MR images comparable to those of standard reconstruction techniques, reducing data collection and processing overhead. Here, we present a reimplementation of Hyun et. al.'s described method as a user-friendly python package. In addition to providing tools to replicate the results of Hyun et. al. using full-resolution training and test data, we include a procedure for reconstructing undersampled MR images for which full-resolution versions may not exist (**COMING SOON**).
+Producing medically acceptable images from highly undersampled (25-30\% of the current standard) MR data was the main challenge faced by Hyun et. al. In their paper, they demonstrated that the use of subsampling in conjunction with deep learning methods can produce MR images comparable to those of standard reconstruction techniques, reducing data collection and processing overhead. Here, we present a reimplementation of Hyun et. al.'s described method as a user-friendly python package. In addition to providing tools to replicate the results of Hyun et. al. using full-resolution training and test data, we include a procedure for reconstructing undersampled MR images for which full-resolution versions may not exist.
 
 ![Image of a reconstruction diff plot for a saggital plane brain MR image slice](images/diff_plot_sample.png)
 
@@ -18,7 +18,11 @@ This implementation is packaged to be PyPI compatible. The package is called `su
 $ pip install -e submrine
 ```
 
-The installation process creates two console entry points: `submrine-train` and `submrine-eval` that can be used to **train** reconstruction networks and **evaluate** the reconstruction process on test images and datasets, respectively.
+The installation process creates three console entry points: `submrine-train`, `submrine-test`, and `submrine-eval` that can be used to:
+
+1. **Train** reconstruction networks
+2. **Test** the full reconstruction process on test images and datasets, respectively
+2. **Evaluate** the reconstruction network (a component of the full process) on undersampled images
 
 ## Usage
 
@@ -42,13 +46,13 @@ The following **training** and **evaluation** examples make use of the free [OAS
    
 4. After each training iteration of SGD, network checkpoints will be saved to the checkpoints directory specified by the `-c/--checkpoints_dir` flag. 
    
-### Test Evaluation
+### Testing
 
-These evaluation procedures allow users to benchmark the effectiveness of the implementation quantitatively or qualitatively by operating on a dataset of full-resolution MR images. These MR images are deliberately subsampled, reconstructed, and compared against their original contents to provide insight into the method's effectiveness. As in the **training** section, these examples make use of the [OASIS](http://www.oasis-brains.org/) dataset.
+These testing procedures allow users to benchmark the effectiveness of the implementation quantitatively or qualitatively by operating on a dataset of full-resolution MR images. These MR images are deliberately subsampled, reconstructed, and compared against their original contents to provide insight into the method's effectiveness. As in the **training** section, these examples make use of the [OASIS](http://www.oasis-brains.org/) dataset.
 
 #### Obtaining diff plots for a single MR image
 
-For testing purposes, this evaluation procedure will produce diff plots for each slice in a specified full-resolution MR image.
+For testing purposes, this procedure will produce diff plots for each slice in a specified full-resolution MR image.
 The diff plots for every slice consists of the following grayscale images:
 
    * The original slice
@@ -59,19 +63,19 @@ The steps for obtaining these plots are as follows:
 
    1. Select a saggital plane brain test image from the [OASIS](http://www.oasis-brains.org/) dataset.
 
-   2. Select one of the reconstruction neural networks that you have trained on the [OASIS](http://www.oasis-brains.org/) dataset. Alternatively, select [one of the pretrained neural networks for the oasis dataset](pretrained_nets/oasis).
+   2. Select one of the reconstruction neural networks that you have trained on the [OASIS](http://www.oasis-brains.org/) dataset. Alternatively, select [one of the pretrained neural networks for the OASIS dataset](pretrained_nets/oasis).
 
-   3. Obtain loss for every slice in the OASIS test image by invoking the following command:
+   3. Subsample, reconstruct, and obtain diff-plots for every slice in the OASIS test image by invoking the following command:
 
       ```sh
-      $ submrine-eval -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
+      $ submrine-test -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
       ```
 
-      The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag. Note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and evaluation.
+      The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag. Note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
    
 #### Computing loss over a test set
 
-For testing purposes, this evaluation procedure will produce loss metrics over a test dataset of full-resolution MR images.
+For testing purposes, this procedure will produce loss metrics over a test dataset of full-resolution MR images.
 These loss metrics consist of the following information:
 
    1. The MSE (or SSIM) between original MR image slices and their reconstructed versions after subsampling.
@@ -100,15 +104,25 @@ The steps for obtaining these results on a sample test set are as follows:
 3. Compute loss metrics over a subset of the test disc of size `SIZE` as follows:
 
    ```sh
-   $ submrine-eval -n /path/to/reconstruction/network -d /path/to/test/disc -r /path/to/results/dir -t <SIZE> -s 4 -f .04
+   $ submrine-test -n /path/to/reconstruction/network -d /path/to/test/disc -r /path/to/results/dir -t <SIZE> -s 4 -f .04
    ```
    
-   The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and evaluation.
+   The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
    
-### Subsampled Evaluation
-Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation.
+### Evaluation
+Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation. This corrected image will be plotted next to the original (undersampled) MR image.
 
-**COMING SOON**
+These steps will describe the process of performing reconstruction and obtaining the associated plots for an **undersampled saggital plane brain image**.
+
+1. We note that saggital plane brain images are well-encapsulated by the OASIS dataset. Therefore, it is reasonable to use the [OASIS](http://www.oasis-brains.org/) dataset to obtain a network for reconstructing our undersampled image. Select one of the reconstruction neural networks that you have trained on this dataset. Alternatively, select [one of the pretrained neural networks for the OASIS dataset](pretrained_nets/oasis).
+
+2. Reconstruct (using the deep neural network) and obtain diff-plots for every slice in the undersampled image by invoking the following command:
+
+   ```sh
+   $ submrine-eval -n /path/to/reconstruction/network -i /path/to/undersampled/image -r /path/to/results/dir
+   ```
+
+   The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag
 
 ## Maintainers
 

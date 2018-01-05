@@ -311,7 +311,7 @@ def load_and_subsample_images(disk_path, num_imgs, substep, low_freq_percent):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Train FNet on MRI image data')
+        description='Train the deep neural network for reconstruction (FNet) on MR image data')
     parser.add_argument(
         '-d',
         '--disk_path',
