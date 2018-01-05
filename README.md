@@ -42,13 +42,13 @@ The following **training** and **evaluation** examples make use of the free [OAS
    
 4. After each training iteration of SGD, network checkpoints will be saved to the checkpoints directory specified by the `-c/--checkpoints_dir` flag. 
    
-### Test Evaluation
+### Testing
 
-These evaluation procedures allow users to benchmark the effectiveness of the implementation quantitatively or qualitatively by operating on a dataset of full-resolution MR images. These MR images are deliberately subsampled, reconstructed, and compared against their original contents to provide insight into the method's effectiveness. As in the **training** section, these examples make use of the [OASIS](http://www.oasis-brains.org/) dataset.
+These testing procedures allow users to benchmark the effectiveness of the implementation quantitatively or qualitatively by operating on a dataset of full-resolution MR images. These MR images are deliberately subsampled, reconstructed, and compared against their original contents to provide insight into the method's effectiveness. As in the **training** section, these examples make use of the [OASIS](http://www.oasis-brains.org/) dataset.
 
 #### Obtaining diff plots for a single MR image
 
-For testing purposes, this evaluation procedure will produce diff plots for each slice in a specified full-resolution MR image.
+For testing purposes, this procedure will produce diff plots for each slice in a specified full-resolution MR image.
 The diff plots for every slice consists of the following grayscale images:
 
    * The original slice
@@ -67,11 +67,11 @@ The steps for obtaining these plots are as follows:
       $ submrine-eval -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
       ```
 
-      The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag. Note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and evaluation.
+      The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag. Note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
    
 #### Computing loss over a test set
 
-For testing purposes, this evaluation procedure will produce loss metrics over a test dataset of full-resolution MR images.
+For testing purposes, this procedure will produce loss metrics over a test dataset of full-resolution MR images.
 These loss metrics consist of the following information:
 
    1. The MSE (or SSIM) between original MR image slices and their reconstructed versions after subsampling.
@@ -103,9 +103,9 @@ The steps for obtaining these results on a sample test set are as follows:
    $ submrine-eval -n /path/to/reconstruction/network -d /path/to/test/disc -r /path/to/results/dir -t <SIZE> -s 4 -f .04
    ```
    
-   The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and evaluation.
+   The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
    
-### Subsampled Evaluation
+### Evaluation
 Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation.
 
 **COMING SOON**
