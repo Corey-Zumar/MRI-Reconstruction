@@ -22,7 +22,7 @@ The installation process creates three console entry points: `submrine-train`, `
 
 1. **Train** reconstruction networks
 2. **Test** the full reconstruction process on test images and datasets, respectively
-2. **Evaluate** the reconstruction network (a component of the full process) on undersampled images.
+2. **Evaluate** the reconstruction network (a component of the full process) on undersampled images
 
 ## Usage
 
