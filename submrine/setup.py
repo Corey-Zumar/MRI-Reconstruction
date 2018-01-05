@@ -24,6 +24,7 @@ setup(
     entry_points={
         "console_scripts": [
             'submrine-train = submrine.train.train_net:main',
+            'submrine-test = submrine.test.test_net:main',
             'submrine-eval = submrine.eval.eval_net:main'
         ]
     })
