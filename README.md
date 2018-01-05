@@ -63,9 +63,9 @@ The steps for obtaining these plots are as follows:
 
    1. Select a saggital plane brain test image from the [OASIS](http://www.oasis-brains.org/) dataset.
 
-   2. Select one of the reconstruction neural networks that you have trained on the [OASIS](http://www.oasis-brains.org/) dataset. Alternatively, select [one of the pretrained neural networks for the oasis dataset](pretrained_nets/oasis).
+   2. Select one of the reconstruction neural networks that you have trained on the [OASIS](http://www.oasis-brains.org/) dataset. Alternatively, select [one of the pretrained neural networks for the OASIS dataset](pretrained_nets/oasis).
 
-   3. Obtain loss for every slice in the OASIS test image by invoking the following command:
+   3. Subsample, reconstruct, and obtain diff-plots for every slice in the OASIS test image by invoking the following command:
 
       ```sh
       $ submrine-test -n /path/to/reconstruction/network -i /path/to/test/image -r /path/to/results/dir -s 4 -f .04
@@ -110,9 +110,19 @@ The steps for obtaining these results on a sample test set are as follows:
    The stated loss metrics will be computed over a subset of the test disc consisting of `SIZE` slices sampled contiguously (in directory order) from the MR images in the test disc. These metrics will be saved as a JSON-formatted file under the directory specified by `-r/--results_dir`. Again, note that the values associated with the `-s/--substep` and `-f/--lf_percent` flags are consistent with the values used in the **training** section. The same values should be used for training and testing.
    
 ### Evaluation
-Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation.
+Given an undersampled MR image, this evaluation procedure will produce a corrected image by evaluating the reconstruction network on its pixel representation. This corrected image will be plotted next to the original (undersampled) MR image.
 
-**COMING SOON**
+These steps will describe the process of performing reconstruction and obtaining the associated plots for an **undersampled saggital plane brain image**.
+
+1. We note that saggital plane brain images are well-encapsulated by the OASIS dataset. Therefore, it is reasonable to use the [OASIS](http://www.oasis-brains.org/) dataset to obtain a network for reconstructing our undersampled image. Select one of the reconstruction neural networks that you have trained on this dataset. Alternatively, select [one of the pretrained neural networks for the OASIS dataset](pretrained_nets/oasis).
+
+2. Reconstruct (using the deep neural network) and obtain diff-plots for every slice in the undersampled image by invoking the following command:
+
+   ```sh
+   $ submrine-eval -n /path/to/reconstruction/network -i /path/to/undersampled/image -r /path/to/results/dir
+   ```
+
+   The diff plots for every slice will be saved in the directory specified by the `-r/--results_dir` flag
 
 ## Maintainers
 
